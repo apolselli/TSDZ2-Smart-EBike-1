@@ -1,0 +1,5 @@
+# local build artifacts (one directory per compile job)
+builds/
+
+# node
+node_modules/

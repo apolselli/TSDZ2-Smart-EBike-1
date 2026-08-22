@@ -1,0 +1,1553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parameter Configurator 6.0 for Open Source Firmware TSDZ2 v20.1C.6 and TSDZ8</title>
+<style>
+ :root{--bg:#f2f4f7;--panel:#fff;--line:#c9d2dd;--head:#1d2733;--accent:#0d6efd}
+ *{box-sizing:border-box}
+ body{font-family:Tahoma,Verdana,Segoe UI,sans-serif;font-size:13px;background:var(--bg);margin:0;color:#1d2733}
+ .banner{background:var(--head);color:#fff;padding:8px 14px;font-weight:bold;font-size:15px}
+ .layout{display:flex;gap:14px;padding:14px;align-items:flex-start;flex-wrap:wrap}
+ .left{flex:1 1 640px;min-width:600px}
+ .sidebar{flex:0 0 270px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px;display:flex;flex-direction:column;gap:6px}
+ .sidebar h3{margin:2px 0;font-size:12px;color:#5a6673}
+ .verline{font-size:12px;color:#5a6673;word-break:break-all}
+ select.list{width:100%;height:120px;font-size:12px}
+ .tabs{display:flex;gap:2px;margin-bottom:0}
+ .tabs button{padding:7px 16px;border:1px solid var(--line);border-bottom:none;background:#e7ecf2;cursor:pointer;font:inherit;border-radius:6px 6px 0 0}
+ .tabs button.active{background:var(--panel);font-weight:bold}
+ .tabpanes{background:var(--panel);border:1px solid var(--line);border-radius:0 6px 6px 6px;padding:12px}
+ .pane{display:none}
+ .pane.active{display:block}
+ .groups{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start}
+ .group{border:1px solid var(--line);border-radius:6px;padding:8px 10px 10px;flex:1 1 280px;min-width:260px}
+ .group>h2{font-size:13px;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+ .row{display:flex;align-items:center;gap:6px;margin:4px 0;min-height:26px}
+ .row label{flex:1 1 auto}
+ .row input[type=text]{width:72px;text-align:right;padding:3px 5px;font:inherit;border:1px solid var(--line);border-radius:4px}
+ .row input:disabled{background:#eef1f5;color:#8a94a1}
+ .row select{padding:3px 5px;font:inherit;border:1px solid var(--line);border-radius:4px;background:#fff}
+ .row .chk{display:flex;align-items:center;gap:5px;flex:1}
+ .radio-row{display:flex;align-items:center;gap:10px;margin:4px 0}
+ .radio-row span{flex:1}
+ .radio-row label{display:inline-flex;align-items:center;gap:3px;margin-left:2px;font-weight:normal}
+ .hidden{display:none!important}
+ .btn{padding:6px 10px;border:1px solid var(--line);border-radius:5px;background:#e7ecf2;cursor:pointer;font:inherit}
+ .btn:hover{background:#dce4ee}
+ .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:bold;padding:12px 10px}
+ .btn.primary:disabled{background:#9aa7b5;border-color:#9aa7b5;cursor:not-allowed}
+ .btn.small{padding:4px 8px;font-size:12px}
+ #toasts{position:fixed;bottom:14px;right:14px;display:flex;flex-direction:column;gap:6px;z-index:50}
+ .toast{background:#24303f;color:#fff;padding:9px 13px;border-radius:6px;max-width:340px;box-shadow:0 3px 10px rgba(0,0,0,.3)}
+ .toast.error{background:#8c2f39}
+ .unit{color:#5a6673;font-size:11px}
+ .hint{color:#5a6673;font-size:11px;margin-top:6px}
+ .adv-cols{display:flex;gap:12px;flex-wrap:wrap}
+ .adv-cols .col{flex:1 1 200px;min-width:190px}
+ .adv-cols .col h4{margin:4px 0;font-size:12px;color:#5a6673}
+</style>
+</head>
+<body>
+<div class="banner">TSDZ2/8 Parameter Configurator &mdash; web edition</div>
+
+<div class="layout">
+  <div class="left">
+    <div class="tabs" id="tabs">
+      <button data-tab="0" class="active">Basic settings</button>
+      <button data-tab="1">Assistance settings</button>
+      <button data-tab="2">Advanced settings</button>
+    </div>
+    <div class="tabpanes">
+      <div class="pane active" id="pane0"></div>
+      <div class="pane" id="pane1"></div>
+      <div class="pane" id="pane2"></div>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <div class="verline" id="LB_VERSION">Version</div>
+    <div class="verline" id="LB_LAST_COMMIT">Last commit</div>
+    <hr>
+    <h3>Experimental Settings</h3>
+    <select class="list" id="expSet" size="8"></select>
+    <button class="btn" id="BTN_COPY_FILE_INI">Copy from Experimental to Proven</button>
+    <h3>Proven Settings</h3>
+    <select class="list" id="provSet" size="7"></select>
+    <div style="display:flex;gap:6px">
+      <button class="btn small" id="BTN_IMPORT" title="Load a .ini file from disk into the editor">Import .ini</button>
+      <button class="btn small" id="BTN_EXPORT" title="Save the current settings as a .ini file">Export .ini</button>
+    </div>
+    <input type="file" id="fileIni" accept=".ini,text/plain" class="hidden">
+    <hr>
+    <button class="btn primary" id="BTN_COMPILE">Compile firmware</button>
+    <div class="hint">Compilation runs on the local server (sdcc + make).<br>
+      Flashing is out of scope: use stm8flash / compile_and_flash_20.sh yourself.</div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+'use strict';
+/* =========================================================================
+ * Port of TSDZ2_Configurator.java (Swing) to a single-file web app.
+ * Field ids are the original Swing variable names (TF_/CB_/RB_/JCB_/jLabel_)
+ * so behaviour can be audited 1:1 against the Java source.
+ * ========================================================================= */
+
+// ----- constants (Java lines 91-94, 162-204) ------------------------------
+const displayDataArray = ["motor temperature","battery SOC rem. %","battery voltage filtered","battery current","motor power","adc throttle 8b","adc torque sensor 10b","pedal cadence rpm","human power","adc pedal torque delta","consumed Wh","motor ERPS","duty cycle PWM %","battery voltage not filt."];
+const lightModeArray = ["<br>lights ON","<br>lights FLASHING","lights ON and BRAKE-FLASHING brak.","lights FLASHING and ON when braking","lights FLASHING BRAKE-FLASHING brak.","lights ON and ON always braking","lights ON and BRAKE-FLASHING alw.br.","lights FLASHING and ON always braking","lights FLASHING BRAKE-FLASHING alw.br.","assist without pedal rotation","assist with sensors error","startup assist"];
+const intAdcPedalTorqueAngleAdjArray = [160,138,120,107,96,88,80,74,70,66,63,59,56,52,50,47,44,42,39,37,36,35,34,33,32,31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16];
+
+const TSDZ2_48V=0, TSDZ2_36V=1, TSDZ8=2;
+const VLCD5=0, VLCD6=1, XH18=2, C850=3, EKD01=4;
+const BEFORE_ECO=1, AFTER_TURBO=2;
+const KILOMETERS=0, MILES=1, ALTERNATIVE_MILES=2;
+const POWER=0, TORQUE=1, CADENCE=2, EMTB=3, HYBRID=4;
+const DISABLED=0, THROTTLE=1, TEMPERATURE=2;
+const PEDALING=1, UNCONDITIONAL=4;
+const NONE=0, SOC=1, VOLTS=2;
+const AUTO=0, WH=1;
+const BRAKE_SENSOR=1, COASTER_BRAKE=2, TEMPERATURE_SWITCH=3;
+const LM35=0, TMP36=1;
+const EMTB_ASSIST_MIN=21;
+const BASED_ON_CURRENT=0, BASED_ON_POWER=1;
+const DEFAULT_VALUE_ADC_STEP_ADV=34;
+const WEIGHT_ON_PEDAL=25;
+const MIDDLE_OFFSET_ADJ=20, OFFSET_MAX_VALUE=34;
+const MIDDLE_RANGE_ADJ=20, MIDDLE_ANGLE_ADJ=20;
+
+// other settings/TSDZ8_header.ini (configMainVersion, configSubVersion, ...)
+const TSDZ8_HEADER = [6,0,100,26,0,0,0,0,0,0];
+const boolTSDZ8headerRead = true;
+
+// Java integer division truncates toward zero
+const intDiv = (a, b) => Math.trunc(a / b);
+
+// ----- field schema --------------------------------------------------------
+// t: text | check | radio | combo ; def = default (Java initComponents)
+const THROTTLE_MODES = ['Disabled','Pedaling','6 km/h only','6 km/h & pedaling','Unconditional'];
+
+const GROUPS = [
+// ---- tab 0 : Basic settings ----
+{tab:0, title:'Motor settings', fields:[
+  {id:'JCB_MOTOR_TYPE', t:'combo', l:'Motor type', opts:['TSDZ2 48V','TSDZ2 36V','TSDZ8'], def:TSDZ2_48V},
+  {id:'TF_BATT_POW_MAX', t:'text', l:'Motor power max (W)', def:'500'},
+  {id:'TF_MOTOR_ACC', t:'text', l:'Motor acceleration (%)', def:'25'},
+  {id:'TF_MOTOR_DEC', t:'text', l:'Motor deceleration (%)', def:'0'},
+  {id:'TF_OVERCURRENT_DELAY', t:'text', l:'Overcurrent error delay (x25ms)', def:'2'},
+  {id:'RB_PWM', t:'radio', l:'Duty cycle frequency (kHz)', def:'RB_PWM_19KHZ', radios:[
+    {id:'RB_PWM_18KHZ', l:'18'},{id:'RB_PWM_19KHZ', l:'19'}]},
+  {id:'CB_FIELD_WEAKENING_ENABLED', t:'check', l:'Field weakening enabled', def:false},
+  {id:'CB_ASS_WITHOUT_PED', t:'check', l:'Startup assist without pedaling tres.', def:false, extra:{id:'TF_ASS_WITHOUT_PED_THRES', def:'20'}},
+  {id:'CB_STARTUP_BOOST_ON_START', t:'check', l:'Startup boost enabled on startup', def:false},
+  {id:'TF_BOOST_TORQUE_FACTOR', t:'text', l:'Startup boost torque factor (%)', def:'300'},
+  {id:'TF_BOOST_CADENCE_STEP', t:'text', l:'Startup boost cadence step (decr.)', def:'20'},
+  {id:'RB_BOOST', t:'radio', l:'Startup boost at zero', def:'RB_BOOST_AT_ZERO_CADENCE', radios:[
+    {id:'RB_BOOST_AT_ZERO_CADENCE', l:'cad.'},{id:'RB_BOOST_AT_ZERO_SPEED', l:'speed'},{id:'RB_BOOST_AT_ZERO_AUTO', l:'auto'}]},
+  {id:'CB_SMOOTH_START_ENABLED', t:'check', l:'Smooth start enabled', def:true, extra:{id:'TF_SMOOTH_START_RAMP', def:'35', label:'Smooth start ramp (%)'}},
+  {id:'CB_STARTUP_ASSIST_ENABLED', t:'check', l:'Startup assist enabled', def:false},
+]},
+{tab:0, title:'Battery settings', fields:[
+  {id:'TF_BAT_CUR_MAX', t:'text', l:'Battery current max (A)', def:'17'},
+  {id:'TF_BATT_CAPACITY', t:'text', l:'Battery capacity (Wh)', def:'630'},
+  {id:'TF_BATT_NUM_CELLS', t:'text', l:'Battery cells number (series)', def:'10'},
+  {id:'TF_BATT_VOLT_CUT_OFF', t:'text', l:'Battery voltage cut off (V)', def:'29'},
+  {id:'TF_BATT_PACK_RESISTANCE', t:'text', l:'Battery pack resistance (m\u03A9)', def:'200'},
+  {id:'TF_BATT_VOLT_CAL', t:'text', l:'Battery voltage calibration (%)', def:'100'},
+  {id:'TF_BATT_CAPACITY_CAL', t:'text', l:'Battery capacity calibration (%)', def:'100'},
+]},
+{tab:0, title:'Display settings', fields:[
+  {id:'JCB_DISPLAY_TYPE', t:'combo', l:'Display type', opts:['VLCD5','VLCD6','XH18','850C','EKD01'], def:VLCD5},
+  {id:'RB_DISPLAY', t:'radio', l:'Mode', def:'RB_DISPLAY_WORK_ON', radios:[
+    {id:'RB_DISPLAY_WORK_ON', l:'Working on'},{id:'RB_DISPLAY_ALWAY_ON', l:'Always on'}]},
+  {id:'JCB_UNITS_TYPE', t:'combo', l:'Units type', opts:['km/h','mph','alt. mph'], def:KILOMETERS},
+  {id:'CB_ODO_COMPENSATION', t:'check', l:'Odometer compensation', def:false},
+  {id:'CB_SET_PARAM_ON_START', t:'check', l:'Set parameters on startup', def:false},
+  {id:'CB_AUTO_DISPLAY_DATA', t:'check', l:'Auto display data with lights on', def:false, extra:{id:'TF_NUM_DATA_AUTO_DISPLAY', def:'2', label:'Number of data displayed at lights on'}},
+]},
+{tab:0, title:'Torque sensor settings', fields:[
+  {id:'CB_TOR_SENSOR_ADV', t:'check', l:'Torque sensor adv.', def:false},
+  {id:'CB_TORQUE_CALIBRATION', t:'check', l:'Calibrated', def:false},
+  {id:'TF_TORQ_PER_ADC_STEP', t:'text', l:'Pedal torque ADC step', def:'67', inline:{t:'check', id:'CB_ADC_STEP_ESTIM', l:'Estimated', def:false}},
+  {id:'TF_TORQ_PER_ADC_STEP_ADV', t:'text', l:'Pedal torque ADC step advanced', def:'34'},
+  {id:'TF_TORQ_ADC_OFFSET_ADJ', t:'text', l:'Pedal torque ADC offset adjustment', def:'0'},
+  {id:'TF_TORQ_ADC_RANGE_ADJ', t:'text', l:'Pedal torque ADC range adjustment', def:'0'},
+  {id:'TF_TORQ_ADC_ANGLE_ADJ', t:'text', l:'Pedal torque ADC angle adjustment', def:'0'},
+  {id:'TF_TORQ_ADC_OFFSET', t:'text', l:'Pedal torque ADC offset (no weight)', def:'150'},
+  {id:'TF_TORQUE_ADC_MAX', t:'text', l:'Pedal torque ADC max (max weight)', def:'300'},
+]},
+{tab:0, title:'Bike settings', fields:[
+  {id:'TF_WHEEL_CIRCUMF', t:'text', l:'Wheel circumference (mm)', def:'2260'},
+  {id:'TF_MAX_SPEED', t:'text', l:'Max speed offroad mode (km/h)', def:'25', dynLabel:true},
+  {id:'CB_MAX_SPEED_DISPLAY', t:'check', l:'Set max speed from display', def:false},
+  {id:'JCB_ASSIST_MODE_ON_STARTUP', t:'combo', l:'Assist mode on startup', opts:['Power','Torque','Cadence','eMTB','Hybrid'], def:POWER},
+]},
+{tab:0, title:'', hiddenFields:true, fields:[
+  {id:'CB_STARTUP_ASSIST_SPEED_LIMIT_ENABLED', t:'check', l:'Speed limit enabled', def:false},
+]},
+
+// ---- tab 1 : Assistance settings ----
+{tab:1, title:'Power assist mode', fields:[
+  {id:'TF_POWER_ASS_1', t:'text', l:'Assist level 1 - ECO', def:'70'},
+  {id:'TF_POWER_ASS_2', t:'text', l:'Assist level 2 - TOUR', def:'120'},
+  {id:'TF_POWER_ASS_3', t:'text', l:'Assist level 3 - SPORT', def:'210'},
+  {id:'TF_POWER_ASS_4', t:'text', l:'Assist level 4 - TURBO', def:'300'},
+]},
+{tab:1, title:'Torque assist mode', fields:[
+  {id:'TF_TORQUE_ASS_1', t:'text', l:'Assist level 1 - ECO', def:'70'},
+  {id:'TF_TORQUE_ASS_2', t:'text', l:'Assist level 2 - TOUR', def:'100'},
+  {id:'TF_TORQUE_ASS_3', t:'text', l:'Assist level 3 - SPORT', def:'130'},
+  {id:'TF_TORQUE_ASS_4', t:'text', l:'Assist level 4 - TURBO', def:'160'},
+]},
+{tab:1, title:'Cadence assist mode', fields:[
+  {id:'TF_CADENCE_ASS_1', t:'text', l:'Assist level 1 - ECO', def:'70'},
+  {id:'TF_CADENCE_ASS_2', t:'text', l:'Assist level 2 - TOUR', def:'100'},
+  {id:'TF_CADENCE_ASS_3', t:'text', l:'Assist level 3 - SPORT', def:'130'},
+  {id:'TF_CADENCE_ASS_4', t:'text', l:'Assist level 4 - TURBO', def:'160'},
+]},
+{tab:1, title:'eMTB assist mode', fields:[
+  {id:'TF_EMTB_ASS_1', t:'text', l:'Assist level 1 - ECO', def:'60'},
+  {id:'TF_EMTB_ASS_2', t:'text', l:'Assist level 2 - TOUR', def:'120'},
+  {id:'TF_EMTB_ASS_3', t:'text', l:'Assist level 3 - SPORT', def:'180'},
+  {id:'TF_EMTB_ASS_4', t:'text', l:'Assist level 4 - TURBO', def:'240'},
+  {id:'RB_EMTB', t:'radio', l:'Based on', def:'RB_eMTB_POWER', radios:[
+    {id:'RB_eMTB_POWER', l:'Power'},{id:'RB_eMTB_TORQUE', l:'Torque'}]},
+]},
+{tab:1, title:'Walk assist mode', unitLabel:'jLabelWalkSpeedUnits', unitText:'km/h x10', fields:[
+  {id:'CB_WALK_ASSIST_ENABLED', t:'check', l:'Walk assist enabled', def:true},
+  {id:'TF_WALK_ASS_SPEED_1', t:'text', l:'Speed level 1 - ECO', def:'35'},
+  {id:'TF_WALK_ASS_SPEED_2', t:'text', l:'Speed level 2 - TOUR', def:'40'},
+  {id:'TF_WALK_ASS_SPEED_3', t:'text', l:'Speed level 3 - SPORT', def:'45'},
+  {id:'TF_WALK_ASS_SPEED_4', t:'text', l:'Speed level 4 - TURBO', def:'50'},
+  {id:'TF_WALK_ASS_SPEED_LIMIT', t:'text', l:'Walk assist speed limit', def:'60'},
+  {id:'CB_WALK_TIME_ENA', t:'check', l:'Walk assist debounce enabled', def:false, extra:{id:'TF_WALK_ASS_TIME', def:'60', label:'Walk assist deb. time'}},
+]},
+{tab:1, title:'Cruise mode', unitLabel:'jLabelCruiseSpeedUnits', unitText:'km/h', fields:[
+  {id:'CB_CRUISE_ENABLED', t:'check', l:'Cruise enabled', def:true},
+  {id:'TF_CRUISE_ASS_1', t:'text', l:'Speed level 1 - ECO', def:'15'},
+  {id:'TF_CRUISE_ASS_2', t:'text', l:'Speed level 2 - TOUR', def:'18'},
+  {id:'TF_CRUISE_ASS_3', t:'text', l:'Speed level 3 - SPORT', def:'21'},
+  {id:'TF_CRUISE_ASS_4', t:'text', l:'Speed level 4 - TURBO', def:'24'},
+  {id:'CB_CRUISE_WHITOUT_PEDALING', t:'check', l:'Cruise without pedaling', def:false},
+  {id:'TF_CRUISE_SPEED_ENA', t:'text', l:'Cruise activation speed', def:'10'},
+]},
+{tab:1, title:'Lights configuration', fields:[
+  {id:'CB_LIGHTS', t:'check', l:'Lights enabled', def:true},
+  {id:'TF_LIGHT_MODE_ON_START', t:'text', l:'Lights mode on startup', def:'0', dynLabel:true, base:'Lights mode on startup'},
+  {id:'TF_LIGHT_MODE_1', t:'text', l:'Mode 1', def:'6', dynLabel:true, base:'Mode 1'},
+  {id:'TF_LIGHT_MODE_2', t:'text', l:'Mode 2', def:'7', dynLabel:true, base:'Mode 2'},
+  {id:'TF_LIGHT_MODE_3', t:'text', l:'Mode 3', def:'1', dynLabel:true, base:'Mode 3'},
+]},
+{tab:1, title:'Street mode', fields:[
+  {id:'CB_STREET_MODE_ON_START', t:'check', l:'Street mode en. on startup', def:true},
+  {id:'TF_STREET_SPEED_LIM', t:'text', l:'Street speed limit (km/h)', def:'25', dynLabel:true},
+  {id:'TF_STREET_POWER_LIM', t:'text', l:'Street power limit (W)', def:'500'},
+  {id:'CB_STREET_POWER_LIM', t:'check', l:'Street power limit enabled', def:false},
+  {id:'CB_STREET_CRUISE', t:'check', l:'Cruise on street mode', def:false},
+  {id:'CB_STREET_WALK', t:'check', l:'Walk assist on street mode', def:false},
+  {id:'JCB_THROTTLE_MODE_STREET', t:'combo', l:'Throttle on street mode', opts:THROTTLE_MODES, def:DISABLED},
+]},
+{tab:1, title:'Torque, eMTB, Hybrid on / Assist level 5', fields:[
+  {id:'JCB_TORQUE_BASED', t:'combo', l:'Torque, eMTB, Hybrid on', opts:['Current','Power'], def:BASED_ON_CURRENT, extra:{id:'TF_TORQUE_MODES_REF_VOLT', def:'36', label:'Ref.Volt.'}},
+  {id:'JCB_ASSIST_LEVEL_5_MODE', t:'combo', l:'Assist level 5', opts:['DISABLED','BEFORE ECO','AFTER TURBO'], def:DISABLED, extra:{id:'TF_ASS_LEVELS_5_PERCENT', def:'60', label:'Assist level 5 (%)'}},
+]},
+
+// ---- tab 2 : Advanced settings ----
+{tab:2, title:'Battery cells settings', fields:[
+  {id:'TF_BAT_CELL_FULL', t:'text', l:'Cell voltage full (V)', def:'3.95'},
+  {id:'TF_BAT_CELL_OVER', t:'text', l:'Overvoltage (V)', def:'4.35'},
+  {id:'TF_BAT_CELL_SOC', t:'text', l:'Reset SOC percentage (V)', def:'4.05'},
+  {id:'TF_BAT_CELL_3_4', t:'text', l:'Cell voltage 3/4 (V)', def:'3.70'},
+  {id:'TF_BAT_CELL_2_4', t:'text', l:'Cell voltage 2/4 (V)', def:'3.45'},
+  {id:'TF_BAT_CELL_1_4', t:'text', l:'Cell voltage 1/4 (V)', def:'3.25'},
+  {id:'TF_BAT_CELL_5_6', t:'text', l:'Cell voltage 5/6 (V)', def:'3.85'},
+  {id:'TF_BAT_CELL_4_6', t:'text', l:'Cell voltage 4/6 (V)', def:'3.70'},
+  {id:'TF_BAT_CELL_3_6', t:'text', l:'Cell voltage 3/6 (V)', def:'3.55'},
+  {id:'TF_BAT_CELL_2_6', t:'text', l:'Cell voltage 2/6 (V)', def:'3.40'},
+  {id:'TF_BAT_CELL_1_6', t:'text', l:'Cell voltage 1/6 (V)', def:'3.25'},
+  {id:'TF_BAT_CELL_EMPTY', t:'text', l:'Cell voltage empty (V)', def:'2.90'},
+]},
+{tab:2, title:'Display advanced settings', advancedCols:true, fields:[
+  {id:'TF_DELAY_DATA_1', t:'text', l:'Time to displayed data 1 (0.1 s)', def:'50'},
+  {id:'TF_DELAY_DATA_2', t:'text', l:'Time to displayed data 2 (0.1 s)', def:'50'},
+  {id:'TF_DELAY_DATA_3', t:'text', l:'Time to displayed data 3 (0.1 s)', def:'50'},
+  {id:'TF_DELAY_DATA_4', t:'text', l:'Time to displayed data 4 (0.1 s)', def:'50'},
+  {id:'TF_DELAY_DATA_5', t:'text', l:'Time to displayed data 5 (0.1 s)', def:'50'},
+  {id:'TF_DELAY_DATA_6', t:'text', l:'Time to displayed data 6 (0.1 s)', def:'50'},
+  {id:'TF_DATA_1', t:'text', l:'Data 1', def:'1', dynLabel:true, base:'Data 1'},
+  {id:'TF_DATA_2', t:'text', l:'Data 2', def:'2', dynLabel:true, base:'Data 2'},
+  {id:'TF_DATA_3', t:'text', l:'Data 3', def:'5', dynLabel:true, base:'Data 3'},
+  {id:'TF_DATA_4', t:'text', l:'Data 4', def:'4', dynLabel:true, base:'Data 4'},
+  {id:'TF_DATA_5', t:'text', l:'Data 5', def:'7', dynLabel:true, base:'Data 5'},
+  {id:'TF_DATA_6', t:'text', l:'Data 6', def:'0', dynLabel:true, base:'Data 6'},
+]},
+{tab:2, title:'Other function settings', fields:[
+  {id:'TF_DELAY_MENU', t:'text', l:'Time to menu items (0.1 s)', def:'50'},
+  {id:'JCB_DATA_ON_STARTUP', t:'combo', l:'Data displayed on startup', opts:['None','Soc %','Volts'], def:SOC},
+  {id:'JCB_SOC_CALC', t:'combo', l:'Soc % calculation', opts:['Auto','Wh','Volts'], def:AUTO},
+  {id:'JCB_BRAKE_FEATURE', t:'combo', l:'Brake feature', opts:['Disabled','Brake sensors','Coaster brake','Temperature switch'], def:BRAKE_SENSOR},
+  {id:'TF_COASTER_BRAKE_THRESHOLD', t:'text', l:'Coaster brake torque threshold', def:'15'},
+  {id:'JCB_OPTIONAL_ADC', t:'combo', l:'Optional ADC in', opts:['Disabled','Throttle','Temperature sensor'], def:DISABLED},
+  {id:'JCB_THROTTLE_MODE', t:'combo', l:'Throttle mode', opts:THROTTLE_MODES, def:DISABLED},
+  {id:'TF_ADC_THROTTLE_MIN', t:'text', l:'ADC throttle value min', def:'47', inline:{t:'text', id:'TF_ADC_THROTTLE_MAX', l:'max', def:'176'}},
+  {id:'JCB_TEMP_SENSOR_TYPE', t:'combo', l:'Temperature sensor type', opts:['LM35','TMP36'], def:LM35},
+  {id:'CB_TEMP_ERR_MIN_LIM', t:'check', l:'Temperature error with min limit', def:false},
+  {id:'TF_TEMP_MIN_LIM', t:'text', l:'Motor temperature min limit (\u00B0C)', def:'65'},
+  {id:'TF_TEMP_MAX_LIM', t:'text', l:'Motor temperature max limit (\u00B0C)', def:'85'},
+]},
+{tab:2, title:'Hidden (not shown by the Java app either)', hiddenFields:true, fields:[
+  {id:'TF_ASSIST_THROTTLE_MIN', t:'text', l:'Throttle assist value min', def:'0', inline:{t:'text', id:'TF_ASSIST_THROTTLE_MAX', l:'max', def:'255'}},
+  {id:'TF_MOTOR_BLOCK_TIME', t:'text', l:'Motor blocked error - threshold time', def:'10'},
+  {id:'TF_MOTOR_BLOCK_CURR', t:'text', l:'Motor blocked error - threshold current', def:'30'},
+  {id:'TF_MOTOR_BLOCK_ERPS', t:'text', l:'Motor blocked error - threshold ERPS', def:'20'},
+]},
+];
+
+// ----- state ---------------------------------------------------------------
+const S = {};        // field values: text -> string, check -> bool, combo -> index, radio group -> radio id
+let intMaxSpeed=25, intStreetSpeed=25;
+let intWalkSpeed1=35, intWalkSpeed2=40, intWalkSpeed3=45, intWalkSpeed4=50, intWalkSpeedLimit=60;
+let intCruiseSpeed1=15, intCruiseSpeed2=18, intCruiseSpeed3=21, intCruiseSpeed4=24, intCruiseSpeed=10;
+let intTorqueAdcStep=67;
+let intTorqueOffsetAdj=MIDDLE_OFFSET_ADJ, intTorqueRangeAdj=MIDDLE_RANGE_ADJ, intTorqueAngleAdj=MIDDLE_ANGLE_ADJ;
+let intThrottleMode=DISABLED, intThrottleModeOnStreetMode=DISABLED, intAssistLevel5=DISABLED;
+let strLastCommit = '';
+
+// radio group membership: radio id -> group field id
+const RADIO_GROUP = {};
+GROUPS.forEach(g => g.fields.forEach(f => {
+  if (f.t === 'radio') f.radios.forEach(r => RADIO_GROUP[r.id] = f.id);
+}));
+
+const V = (id) => S[id];                 // text value
+const C = (id) => !!S[id];               // checkbox
+const IDX = (id) => S[id];               // combo index
+const R = (id) => S[RADIO_GROUP[id]] === id; // radio selected
+const setV = (id, v) => { S[id] = v; syncField(id); };
+const setC = (id, b) => { S[id] = !!b; syncField(id); };
+const setIdx = (id, i) => { S[id] = i; syncField(id); };
+const setRadio = (radioId, on) => { if (on) { S[RADIO_GROUP[radioId]] = radioId; syncField(RADIO_GROUP[radioId]); } };
+
+const UNITS = () => IDX('JCB_UNITS_TYPE');
+const DISPLAY = () => IDX('JCB_DISPLAY_TYPE');
+const MOTOR = () => IDX('JCB_MOTOR_TYPE');
+const BRAKE = () => IDX('JCB_BRAKE_FEATURE');
+const ADC = () => IDX('JCB_OPTIONAL_ADC');
+const brakeOk = () => BRAKE() === BRAKE_SENSOR || BRAKE() === TEMPERATURE_SWITCH;
+const throttleOk = () => ADC() === THROTTLE && brakeOk();
+
+// ----- DOM ----------------------------------------------------------------
+const el = (id) => document.getElementById(id);
+
+function buildRow(f) {
+  const row = document.createElement('div');
+  row.className = 'row';
+  if (f.t === 'text') {
+    const lb = document.createElement('label'); lb.htmlFor = f.id; lb.textContent = f.l; lb.id = 'lb_' + f.id;
+    const inp = document.createElement('input'); inp.type = 'text'; inp.id = f.id;
+    row.append(lb, inp);
+    if (f.inline) {
+      const g = f.inline;
+      if (g.t === 'check') {
+        const w = document.createElement('span'); w.className = 'chk';
+        const cb = document.createElement('input'); cb.type = 'checkbox'; cb.id = g.id;
+        const cl = document.createElement('label'); cl.htmlFor = g.id; cl.textContent = g.l;
+        w.append(cb, cl); row.append(w);
+      } else {
+        const gl = document.createElement('label'); gl.htmlFor = g.id; gl.textContent = g.l;
+        const gi = document.createElement('input'); gi.type = 'text'; gi.id = g.id;
+        row.append(gl, gi);
+      }
+    }
+  } else if (f.t === 'check') {
+    const w = document.createElement('span'); w.className = 'chk';
+    const cb = document.createElement('input'); cb.type = 'checkbox'; cb.id = f.id;
+    const cl = document.createElement('label'); cl.htmlFor = f.id; cl.textContent = f.l;
+    w.append(cb, cl); row.append(w);
+    if (f.extra) {
+      const el2 = document.createElement('input'); el2.type = 'text'; el2.id = f.extra.id;
+      el2.title = f.extra.label || '';
+      const lb2 = document.createElement('span'); lb2.className = 'unit'; lb2.textContent = f.extra.label || '';
+      if (f.extra.label) row.append(lb2);
+      row.append(el2);
+    }
+  } else if (f.t === 'combo') {
+    const lb = document.createElement('label'); lb.htmlFor = f.id; lb.textContent = f.l;
+    const sel = document.createElement('select'); sel.id = f.id;
+    f.opts.forEach((o, i) => { const op = document.createElement('option'); op.value = i; op.textContent = o; sel.append(op); });
+    row.append(lb, sel);
+    if (f.extra) {
+      const lb2 = document.createElement('label'); lb2.htmlFor = f.extra.id; lb2.textContent = f.extra.label;
+      const el2 = document.createElement('input'); el2.type = 'text'; el2.id = f.extra.id;
+      row.append(lb2, el2);
+    }
+  } else if (f.t === 'radio') {
+    row.classList.add('radio-row');
+    const sp = document.createElement('span'); sp.textContent = f.l; sp.style.flex = '1';
+    row.append(sp);
+    f.radios.forEach(r => {
+      const rb = document.createElement('input'); rb.type = 'radio'; rb.name = f.id; rb.id = r.id;
+      const rl = document.createElement('label'); rl.htmlFor = r.id; rl.textContent = r.l;
+      row.append(rb, rl);
+    });
+  }
+  return row;
+}
+
+function buildUI() {
+  GROUPS.forEach(g => {
+    const pane = el('pane' + g.tab);
+    let host = pane;
+    const box = document.createElement('div');
+    box.className = 'group' + (g.hiddenFields ? ' hidden' : '');
+    if (g.title) { const h = document.createElement('h2'); h.textContent = g.title; if (g.unitLabel) { const u = document.createElement('span'); u.className='unit'; u.id = g.unitLabel; u.textContent = ' ' + g.unitText; h.append(u);} box.append(h); }
+    if (g.advancedCols) {
+      const cols = document.createElement('div'); cols.className = 'adv-cols';
+      const c1 = document.createElement('div'); c1.className = 'col';
+      const c2 = document.createElement('div'); c2.className = 'col';
+      g.fields.forEach((f, i) => (i < 6 ? c1 : c2).append(buildRow(f)));
+      cols.append(c1, c2); box.append(cols);
+    } else {
+      const wrap = document.createElement('div'); wrap.className = 'groups';
+      const inner = document.createElement('div'); inner.style.width = '100%';
+      g.fields.forEach(f => inner.append(buildRow(f)));
+      wrap.append(inner); box.append(wrap);
+    }
+    pane.append(box);
+  });
+
+  // defaults
+  GROUPS.forEach(g => g.fields.forEach(f => {
+    if (f.t === 'radio') { S[f.id] = f.def; f.radios.forEach(r => S[r.id] = undefined); }
+    else S[f.id] = f.def;
+    if (f.inline) S[f.inline.id] = f.inline.def;
+    if (f.extra) S[f.extra.id] = f.extra.def;
+  }));
+  syncAllFields();
+}
+
+function syncField(id) {
+  const node = el(id);
+  if (!node) return;
+  if (node.type === 'checkbox') node.checked = !!S[id];
+  else if (node.tagName === 'SELECT') node.value = String(S[id]);
+  else if (node.type === 'radio') node.checked = R(id);
+  else node.value = S[id];
+}
+function syncAllFields() { Object.keys(S).forEach(k => { if (S[k] !== undefined) syncField(k); }); }
+
+function setEnabled(id, on) { const n = el(id); if (n) n.disabled = !on; }
+
+// ----- dynamic labels (Java jLabelData*, jLabelLights*, jLabelMaxSpeed...) -
+function dataLabel(n) {
+  const id = 'TF_DATA_' + n, lb = el('lb_' + id);
+  const t = V(id); const idx = parseInt(t, 10);
+  lb.textContent = (idx >= 0 && idx <= 13 && String(idx) === String(t).trim()) ? `Data ${n} - ${displayDataArray[idx]}` : `Data ${n}`;
+}
+function lightLabel(which) {
+  const map = { ON_START: [0, i => i >= 0 && i <= 8, 'Lights mode on startup'],
+                1: [1, i => (i >= 0 && i <= 8) || i === 11, 'Mode 1'],
+                2: [2, i => i >= 0 && i <= 9, 'Mode 2'],
+                3: [3, i => (i >= 0 && i <= 8) || i === 10, 'Mode 3'] };
+  const id = which === 'ON_START' ? 'TF_LIGHT_MODE_ON_START' : 'TF_LIGHT_MODE_' + which;
+  const lb = el('lb_' + id);
+  const idx = parseInt(V(id), 10);
+  const ok = !isNaN(idx) && String(idx) === V(id).trim() && map[which][1](idx);
+  lb.textContent = ok ? `${map[which][2]} - ${lightModeArray[idx].replace('<br>', '')}` : map[which][2];
+}
+function applyDynamicLabels() {
+  for (let n = 1; n <= 6; n++) dataLabel(n);
+  ['ON_START', '1', '2', '3'].forEach(lightLabel);
+}
+
+// ----- rules ---------------------------------------------------------------
+
+// Java JCB_UNITS_TYPEItemStateChanged (6162)
+function unitsChanged() {
+  if (DISPLAY() === VLCD6 && UNITS() === MILES) setIdx('JCB_UNITS_TYPE', ALTERNATIVE_MILES);
+  const km = UNITS() === KILOMETERS;
+  el('lb_TF_MAX_SPEED').textContent = km ? 'Max speed offroad mode (km/h)' : 'Max speed offroad mode (mph)';
+  el('lb_TF_STREET_SPEED_LIM').textContent = km ? 'Street speed limit (km/h)' : 'Street speed limit (mph)';
+  el('jLabelCruiseSpeedUnits').textContent = km ? ' km/h' : ' mph';
+  el('jLabelWalkSpeedUnits').textContent = km ? ' km/h x10' : ' mph x10';
+  setV('TF_MAX_SPEED', String(km ? intMaxSpeed : intDiv(intMaxSpeed * 10 + 5, 16)));
+  setV('TF_STREET_SPEED_LIM', String(km ? intStreetSpeed : intDiv(intStreetSpeed * 10 + 5, 16)));
+  setV('TF_WALK_ASS_SPEED_1', String(km ? intWalkSpeed1 : intDiv(intWalkSpeed1 * 10 + 5, 16)));
+  setV('TF_WALK_ASS_SPEED_2', String(km ? intWalkSpeed2 : intDiv(intWalkSpeed2 * 10 + 5, 16)));
+  setV('TF_WALK_ASS_SPEED_3', String(km ? intWalkSpeed3 : intDiv(intWalkSpeed3 * 10 + 5, 16)));
+  setV('TF_WALK_ASS_SPEED_4', String(km ? intWalkSpeed4 : intDiv(intWalkSpeed4 * 10 + 5, 16)));
+  setV('TF_WALK_ASS_SPEED_LIMIT', String(km ? intWalkSpeedLimit : intDiv(intWalkSpeedLimit * 10 + 5, 16)));
+  setV('TF_CRUISE_SPEED_ENA', String(km ? intCruiseSpeed : intDiv(intCruiseSpeed * 10 + 5, 16)));
+  setV('TF_CRUISE_ASS_1', String(km ? intCruiseSpeed1 : intDiv(intCruiseSpeed1 * 10 + 5, 16)));
+  setV('TF_CRUISE_ASS_2', String(km ? intCruiseSpeed2 : intDiv(intCruiseSpeed2 * 10 + 5, 16)));
+  setV('TF_CRUISE_ASS_3', String(km ? intCruiseSpeed3 : intDiv(intCruiseSpeed3 * 10 + 5, 16)));
+  setV('TF_CRUISE_ASS_4', String(km ? intCruiseSpeed4 : intDiv(intCruiseSpeed4 * 10 + 5, 16)));
+}
+
+// Java speed KeyReleased handlers (5470-5656): store km/h-equivalent int
+function speedIntUpdated(id) {
+  const v = parseInt(V(id), 10);
+  if (isNaN(v)) return;
+  const store = UNITS() === KILOMETERS ? v : intDiv(v * 16, 10);
+  switch (id) {
+    case 'TF_MAX_SPEED': intMaxSpeed = store; break;
+    case 'TF_STREET_SPEED_LIM': intStreetSpeed = store; break;
+    case 'TF_WALK_ASS_SPEED_1': intWalkSpeed1 = store; break;
+    case 'TF_WALK_ASS_SPEED_2': intWalkSpeed2 = store; break;
+    case 'TF_WALK_ASS_SPEED_3': intWalkSpeed3 = store; break;
+    case 'TF_WALK_ASS_SPEED_4': intWalkSpeed4 = store; break;
+    case 'TF_WALK_ASS_SPEED_LIMIT': intWalkSpeedLimit = store; break;
+    case 'TF_CRUISE_SPEED_ENA': intCruiseSpeed = store; break;
+    case 'TF_CRUISE_ASS_1': intCruiseSpeed1 = store; break;
+    case 'TF_CRUISE_ASS_2': intCruiseSpeed2 = store; break;
+    case 'TF_CRUISE_ASS_3': intCruiseSpeed3 = store; break;
+    case 'TF_CRUISE_ASS_4': intCruiseSpeed4 = store; break;
+  }
+}
+
+// Java torque estimation (5685-5721, 6314)
+function updateEstimatedStep() {
+  if (!C('CB_ADC_STEP_ESTIM')) return;
+  const off = parseInt(V('TF_TORQ_ADC_OFFSET'), 10);
+  const max = parseInt(V('TF_TORQUE_ADC_MAX'), 10);
+  const adv = parseInt(V('TF_TORQ_PER_ADC_STEP_ADV'), 10);
+  if (isNaN(off) || isNaN(max) || isNaN(adv)) return;
+  const onWeight = off + intDiv((max - off) * 75, 100);
+  if (onWeight - off === 0) return;
+  let calc = intDiv(WEIGHT_ON_PEDAL * 167, onWeight - off);
+  calc = intDiv(calc * adv, DEFAULT_VALUE_ADC_STEP_ADV);
+  setV('TF_TORQ_PER_ADC_STEP', String(calc));
+}
+
+// Java torque adjustment KeyReleased handlers (5658, 5723, 5750)
+function torqueAdjUpdated(id, middle, isOffset) {
+  const t = V(id);
+  let sign = t.substring(0, 1), value;
+  if (sign === '-') value = parseInt(t.substring(1), 10);
+  else if (t === '') value = 0;
+  else value = parseInt(t, 10);
+  if (isNaN(value)) { setV(id, '0'); store(middle); return; }
+  if (value >= 0 && value <= middle) {
+    if (t === '') store(middle);
+    else if (sign === '-') store(middle - value);
+    else {
+      let adj = middle + value;
+      if (isOffset && adj > OFFSET_MAX_VALUE) {
+        adj = OFFSET_MAX_VALUE;
+        setV(id, String(OFFSET_MAX_VALUE - middle));
+      }
+      store(adj);
+    }
+  } else { setV(id, '0'); store(middle); }
+  function store(v) {
+    if (id === 'TF_TORQ_ADC_OFFSET_ADJ') intTorqueOffsetAdj = v;
+    else if (id === 'TF_TORQ_ADC_RANGE_ADJ') intTorqueRangeAdj = v;
+    else intTorqueAngleAdj = v;
+  }
+}
+
+// Java JCB_DISPLAY_TYPEItemStateChanged value part (5979-6013)
+function displayTypeChanged() {
+  const d = DISPLAY();
+  if (d === VLCD5 || d === VLCD6 || d === XH18) setIdx('JCB_ASSIST_LEVEL_5_MODE', DISABLED);
+  else if (d === C850 || d === EKD01) setIdx('JCB_ASSIST_LEVEL_5_MODE', BEFORE_ECO);
+  if (DISPLAY() === VLCD6 && UNITS() === MILES) setIdx('JCB_UNITS_TYPE', ALTERNATIVE_MILES);
+  assistLevel5Changed();
+  applyEnableRules();
+}
+
+// Java JCB_ASSIST_LEVEL_5_MODEItemStateChanged + load fixup (538, 6276)
+function assistLevel5Changed() {
+  const m = IDX('JCB_ASSIST_LEVEL_5_MODE');
+  intAssistLevel5 = m;
+  const p = parseInt(V('TF_ASS_LEVELS_5_PERCENT'), 10);
+  if (m === BEFORE_ECO) { if (!isNaN(p) && p > 100) setV('TF_ASS_LEVELS_5_PERCENT', '60'); }
+  else if (m === AFTER_TURBO) { if (!isNaN(p) && p < 100) setV('TF_ASS_LEVELS_5_PERCENT', '130'); }
+}
+
+// Java throttle gate inside JCB_OPTIONAL_ADC / JCB_BRAKE_FEATURE handlers (5816-5836, 5916-5936)
+function throttleGate() {
+  if (ADC() === THROTTLE && brakeOk()) return;
+  setIdx('JCB_THROTTLE_MODE', DISABLED);
+  setIdx('JCB_THROTTLE_MODE_STREET', DISABLED);
+  if (ADC() === THROTTLE) setIdx('JCB_OPTIONAL_ADC', DISABLED);
+}
+
+// Java JCB_BRAKE_FEATUREItemStateChanged value part (5903-5907)
+function brakeFeatureChanged() {
+  if (BRAKE() === COASTER_BRAKE) {
+    setC('CB_STARTUP_ASSIST_ENABLED', false);
+    setC('CB_WALK_ASSIST_ENABLED', false);
+    setC('CB_CRUISE_WHITOUT_PEDALING', false);
+  }
+  throttleGate();
+  applyEnableRules();
+}
+
+// Java JCB_MOTOR_TYPEItemStateChanged (6231)
+function motorTypeChanged() {
+  if (MOTOR() === TSDZ8) {
+    el('BTN_COMPILE').textContent = 'Compile HEX file';
+    el('LB_VERSION').textContent = 'Version (mstrens)';
+    el('LB_LAST_COMMIT').textContent = `Maim ${TSDZ8_HEADER[0]} - Sub ${TSDZ8_HEADER[1]}`;
+    el('BTN_COMPILE').disabled = !boolTSDZ8headerRead;
+  } else {
+    el('BTN_COMPILE').textContent = 'Compile firmware';
+    el('LB_VERSION').textContent = 'Version (last commits)';
+    el('LB_LAST_COMMIT').textContent = strLastCommit || 'Last commit';
+    el('BTN_COMPILE').disabled = false;
+  }
+  applyEnableRules();
+}
+
+// enable/disable cascade (union of all Java StateChanged handlers)
+function applyEnableRules() {
+  const walk = C('CB_WALK_ASSIST_ENABLED'), cruise = C('CB_CRUISE_ENABLED');
+  const boost = C('CB_STARTUP_BOOST_ON_START'), cal = C('CB_TORQUE_CALIBRATION');
+  const tempOk = ADC() === TEMPERATURE || MOTOR() === TSDZ8;
+
+  setEnabled('TF_STREET_POWER_LIM', C('CB_STREET_POWER_LIM'));
+  setEnabled('TF_ASS_WITHOUT_PED_THRES', C('CB_ASS_WITHOUT_PED'));
+  setEnabled('CB_WALK_ASSIST_ENABLED', BRAKE() !== COASTER_BRAKE);
+  ['TF_WALK_ASS_SPEED_1','TF_WALK_ASS_SPEED_2','TF_WALK_ASS_SPEED_3','TF_WALK_ASS_SPEED_4','TF_WALK_ASS_SPEED_LIMIT']
+    .forEach(id => setEnabled(id, walk));
+  setEnabled('CB_WALK_TIME_ENA', brakeOk() && walk);
+  setEnabled('TF_WALK_ASS_TIME', brakeOk() && walk && C('CB_WALK_TIME_ENA'));
+  setEnabled('CB_STREET_WALK', walk);
+  setEnabled('TF_NUM_DATA_AUTO_DISPLAY', C('CB_AUTO_DISPLAY_DATA'));
+  ['TF_LIGHT_MODE_ON_START','TF_LIGHT_MODE_1','TF_LIGHT_MODE_2','TF_LIGHT_MODE_3']
+    .forEach(id => setEnabled(id, C('CB_LIGHTS')));
+  setEnabled('TF_MAX_SPEED', !C('CB_MAX_SPEED_DISPLAY'));
+  ['TF_TORQ_ADC_OFFSET','TF_TORQ_ADC_RANGE_ADJ','TF_TORQ_ADC_ANGLE_ADJ','TF_TORQUE_ADC_MAX','CB_ADC_STEP_ESTIM','TF_TORQ_PER_ADC_STEP_ADV','CB_TOR_SENSOR_ADV']
+    .forEach(id => setEnabled(id, cal));
+  setEnabled('TF_TORQ_PER_ADC_STEP', !C('CB_ADC_STEP_ESTIM'));
+  ['TF_TEMP_MIN_LIM','TF_TEMP_MAX_LIM','CB_TEMP_ERR_MIN_LIM'].forEach(id => setEnabled(id, tempOk));
+  setEnabled('JCB_TEMP_SENSOR_TYPE', ADC() === TEMPERATURE);
+  ['TF_ADC_THROTTLE_MIN','TF_ADC_THROTTLE_MAX','TF_ASSIST_THROTTLE_MIN','TF_ASSIST_THROTTLE_MAX','JCB_THROTTLE_MODE','JCB_THROTTLE_MODE_STREET']
+    .forEach(id => setEnabled(id, throttleOk()));
+  setEnabled('TF_COASTER_BRAKE_THRESHOLD', BRAKE() === COASTER_BRAKE);
+  setEnabled('CB_STARTUP_ASSIST_ENABLED', BRAKE() !== COASTER_BRAKE);
+  setEnabled('CB_STARTUP_ASSIST_SPEED_LIMIT_ENABLED', C('CB_STARTUP_ASSIST_ENABLED'));
+  setEnabled('CB_CRUISE_WHITOUT_PEDALING', brakeOk() && cruise);
+  ['TF_CRUISE_ASS_1','TF_CRUISE_ASS_2','TF_CRUISE_ASS_3','TF_CRUISE_ASS_4','TF_CRUISE_SPEED_ENA','CB_STREET_CRUISE']
+    .forEach(id => setEnabled(id, cruise));
+  ['TF_BOOST_TORQUE_FACTOR','TF_BOOST_CADENCE_STEP','RB_BOOST_AT_ZERO_CADENCE','RB_BOOST_AT_ZERO_SPEED','RB_BOOST_AT_ZERO_AUTO']
+    .forEach(id => setEnabled(id, boost));
+  setEnabled('TF_SMOOTH_START_RAMP', C('CB_SMOOTH_START_ENABLED'));
+  const six = DISPLAY() === VLCD5 || DISPLAY() === C850 || DISPLAY() === EKD01;
+  ['TF_BAT_CELL_5_6','TF_BAT_CELL_4_6','TF_BAT_CELL_3_6','TF_BAT_CELL_2_6','TF_BAT_CELL_1_6']
+    .forEach(id => setEnabled(id, six));
+  ['TF_BAT_CELL_3_4','TF_BAT_CELL_2_4','TF_BAT_CELL_1_4']
+    .forEach(id => setEnabled(id, !six));
+  setEnabled('TF_ASS_LEVELS_5_PERCENT', IDX('JCB_ASSIST_LEVEL_5_MODE') !== DISABLED);
+  setEnabled('TF_TORQUE_MODES_REF_VOLT', IDX('JCB_TORQUE_BASED') === BASED_ON_POWER);
+}
+
+// ----- change dispatch -----------------------------------------------------
+function onUserChange(id) {
+  const node = el(id);
+  if (node.type === 'checkbox') S[id] = node.checked;
+  else if (node.tagName === 'SELECT') S[id] = Number(node.value);
+  else if (node.type === 'radio') S[RADIO_GROUP[id]] = id;
+  else S[id] = node.value;
+
+  switch (id) {
+    case 'JCB_UNITS_TYPE': unitsChanged(); break;
+    case 'JCB_DISPLAY_TYPE': displayTypeChanged(); break;
+    case 'JCB_MOTOR_TYPE': motorTypeChanged(); break;
+    case 'JCB_BRAKE_FEATURE': brakeFeatureChanged(); break;
+    case 'JCB_OPTIONAL_ADC': throttleGate(); applyEnableRules(); break;
+    case 'JCB_THROTTLE_MODE':
+      if (IDX('JCB_THROTTLE_MODE') < IDX('JCB_THROTTLE_MODE_STREET')) setIdx('JCB_THROTTLE_MODE_STREET', IDX('JCB_THROTTLE_MODE'));
+      break;
+    case 'JCB_THROTTLE_MODE_STREET':
+      if (IDX('JCB_THROTTLE_MODE_STREET') > IDX('JCB_THROTTLE_MODE')) setIdx('JCB_THROTTLE_MODE_STREET', IDX('JCB_THROTTLE_MODE'));
+      break;
+    case 'JCB_ASSIST_LEVEL_5_MODE': assistLevel5Changed(); applyEnableRules(); break;
+    case 'JCB_TORQUE_BASED': applyEnableRules(); break;
+    case 'CB_ADC_STEP_ESTIM':
+      if (!C('CB_ADC_STEP_ESTIM')) setV('TF_TORQ_PER_ADC_STEP', String(intTorqueAdcStep));
+      else updateEstimatedStep();
+      applyEnableRules();
+      break;
+    case 'TF_TORQ_ADC_OFFSET': case 'TF_TORQUE_ADC_MAX': case 'TF_TORQ_PER_ADC_STEP_ADV':
+      updateEstimatedStep(); break;
+    case 'TF_TORQ_ADC_OFFSET_ADJ': torqueAdjUpdated(id, MIDDLE_OFFSET_ADJ, true); break;
+    case 'TF_TORQ_ADC_RANGE_ADJ': torqueAdjUpdated(id, MIDDLE_RANGE_ADJ, false); break;
+    case 'TF_TORQ_ADC_ANGLE_ADJ': torqueAdjUpdated(id, MIDDLE_ANGLE_ADJ, false); break;
+    case 'TF_OVERCURRENT_DELAY': {
+      const v = parseInt(V(id), 10);
+      if (isNaN(v) || v < 0 || v > 5) setV(id, '2');
+      break; }
+    case 'TF_NUM_DATA_AUTO_DISPLAY': {
+      const v = parseInt(V(id), 10);
+      if (!isNaN(v) && v > 6) setV(id, '6');
+      if (!isNaN(v) && v === 0) setV(id, '1');
+      break; }
+    case 'TF_ASS_LEVELS_5_PERCENT': {
+      const v = parseInt(V(id), 10);
+      if (IDX('JCB_ASSIST_LEVEL_5_MODE') === BEFORE_ECO && !isNaN(v) && v > 100) setV(id, '60');
+      break; }
+    default:
+      if (id.startsWith('TF_MAX_SPEED') || id.startsWith('TF_STREET_SPEED') || id.startsWith('TF_WALK_ASS_SPEED') || id.startsWith('TF_CRUISE_')) speedIntUpdated(id);
+  }
+  if (id.startsWith('TF_DATA_')) dataLabel(Number(id.slice(-1)));
+  if (id.startsWith('TF_LIGHT_MODE')) lightLabel(id === 'TF_LIGHT_MODE_ON_START' ? 'ON_START' : id.slice(-1));
+  applyEnableRules();
+}
+
+function onBlurField(id) {
+  // Java FocusLost handlers: eMTB minimum + assist level 5 percent floor
+  if (/^TF_EMTB_ASS_[1-4]$/.test(id)) {
+    const v = parseInt(V(id), 10);
+    if (V(id) === '' || isNaN(v) || v < EMTB_ASSIST_MIN) setV(id, String(EMTB_ASSIST_MIN));
+  }
+  if (id === 'TF_ASS_LEVELS_5_PERCENT' && IDX('JCB_ASSIST_LEVEL_5_MODE') === AFTER_TURBO) {
+    const v = parseInt(V(id), 10);
+    if (!isNaN(v) && v < 100) setV(id, '130');
+  }
+}
+
+// ----- .ini loading (mirrors Java loadSettings 206-752) --------------------
+function loadIni(text, name) {
+  let lines = text.split(/\r?\n/);
+  if (text.endsWith('\n')) lines = lines.slice(0, -1);
+  let i = 0;
+  const rd = () => (i < lines.length ? lines[i++] : null);
+  const rdBool = () => { const l = rd(); return l === null ? null : l === 'true'; };
+  const rdInt = () => { const l = rd(); if (l === null) return null; const v = parseInt(l, 10); if (isNaN(v)) throw new Error('int'); return v; };
+  let corrupt = false;
+
+  const readText = (id) => { const l = rd(); if (l !== null) setV(id, l); };
+  const readBool = (id) => { const b = rdBool(); if (b !== null) setC(id, b); };
+
+  try {
+    let boolMotorTypeTSDZ2_36V = rdBool();                               // 1
+    let boolMotorTypeTSDZ2_48V = rdBool();                               // 2
+    if (boolMotorTypeTSDZ2_36V === null) boolMotorTypeTSDZ2_36V = false;
+    if (boolMotorTypeTSDZ2_48V === null) boolMotorTypeTSDZ2_48V = false;
+    readBool('CB_TORQUE_CALIBRATION');                                   // 3
+    readText('TF_MOTOR_ACC');                                            // 4
+    readBool('CB_ASS_WITHOUT_PED');                                      // 5
+    readText('TF_ASS_WITHOUT_PED_THRES');                                // 6
+    intTorqueAdcStep = rdInt();                                          // 7
+    readText('TF_TORQUE_ADC_MAX');                                       // 8
+    readText('TF_BOOST_TORQUE_FACTOR');                                  // 9
+    readText('TF_MOTOR_BLOCK_TIME');                                     // 10
+    readText('TF_MOTOR_BLOCK_CURR');                                     // 11
+    readText('TF_MOTOR_BLOCK_ERPS');                                     // 12
+    readText('TF_BOOST_CADENCE_STEP');                                   // 13
+    readText('TF_BAT_CUR_MAX');                                          // 14
+    readText('TF_BATT_POW_MAX');                                         // 15
+    readText('TF_BATT_CAPACITY');                                        // 16
+    readText('TF_BATT_NUM_CELLS');                                       // 17
+    readText('TF_MOTOR_DEC');                                            // 18
+    readText('TF_BATT_VOLT_CUT_OFF');                                    // 19
+    readText('TF_BATT_VOLT_CAL');                                        // 20
+    readText('TF_BATT_CAPACITY_CAL');                                    // 21
+    readText('TF_BAT_CELL_OVER');                                        // 22
+    readText('TF_BAT_CELL_SOC');                                         // 23
+    readText('TF_BAT_CELL_FULL');                                        // 24
+    readText('TF_BAT_CELL_3_4'); readText('TF_BAT_CELL_2_4'); readText('TF_BAT_CELL_1_4'); // 25-27
+    readText('TF_BAT_CELL_5_6'); readText('TF_BAT_CELL_4_6'); readText('TF_BAT_CELL_3_6'); readText('TF_BAT_CELL_2_6'); readText('TF_BAT_CELL_1_6'); // 28-32
+    readText('TF_BAT_CELL_EMPTY');                                       // 33
+    readText('TF_WHEEL_CIRCUMF');                                        // 34
+    intMaxSpeed = rdInt();                                               // 35
+    readBool('CB_LIGHTS');                                               // 36
+    readBool('CB_WALK_ASSIST_ENABLED');                                  // 37
+    const boolBrakeSensor = rdBool();                                    // 38
+    const boolOptionalAdcDisabled = rdBool();                            // 39
+    const boolOptionalAdcThrottle = rdBool();                            // 40
+    const boolOptionalAdcTemperature = rdBool();                         // 41
+    readBool('CB_STREET_MODE_ON_START');                                 // 42
+    readBool('CB_SET_PARAM_ON_START');                                   // 43
+    readBool('CB_ODO_COMPENSATION');                                     // 44
+    readBool('CB_STARTUP_BOOST_ON_START');                               // 45
+    readBool('CB_TOR_SENSOR_ADV');                                       // 46
+    readText('TF_LIGHT_MODE_ON_START');                                  // 47
+    const boolAssistStartupPower = rdBool();                             // 48
+    const boolAssistStartupTorque = rdBool();                            // 49
+    const boolAssistStartupCadence = rdBool();                           // 50
+    const boolAssistStartupEmtb = rdBool();                              // 51
+    readText('TF_LIGHT_MODE_1'); readText('TF_LIGHT_MODE_2'); readText('TF_LIGHT_MODE_3'); // 52-54
+    readBool('CB_STREET_POWER_LIM');                                     // 55
+    readText('TF_STREET_POWER_LIM');                                     // 56
+    intStreetSpeed = rdInt();                                            // 57
+    const boolStreetThrottle = rdBool();                                 // 58 (legacy)
+    readBool('CB_STREET_CRUISE');                                        // 59
+    readText('TF_ADC_THROTTLE_MIN');                                     // 60
+    readText('TF_ADC_THROTTLE_MAX');                                     // 61
+    readText('TF_TEMP_MIN_LIM');                                         // 62
+    readText('TF_TEMP_MAX_LIM');                                         // 63
+    readBool('CB_TEMP_ERR_MIN_LIM');                                     // 64
+    const boolDisplayTypeVLCD6 = rdBool();                               // 65
+    const boolDisplayTypeVLCD5 = rdBool();                               // 66
+    const boolDisplayTypeXH18 = rdBool();                                // 67
+    const workOn = rdBool();                                             // 68
+    const alwaysOn = rdBool();                                           // 69
+    readBool('CB_MAX_SPEED_DISPLAY');                                    // 70
+    readText('TF_DELAY_MENU');                                           // 71
+    const boolCoasterBrake = rdBool();                                   // 72
+    readText('TF_COASTER_BRAKE_THRESHOLD');                              // 73
+    readBool('CB_AUTO_DISPLAY_DATA');                                    // 74
+    readBool('CB_STARTUP_ASSIST_ENABLED');                               // 75
+    readText('TF_DELAY_DATA_1'); readText('TF_DELAY_DATA_2'); readText('TF_DELAY_DATA_3'); // 76-78
+    readText('TF_DELAY_DATA_4'); readText('TF_DELAY_DATA_5'); readText('TF_DELAY_DATA_6'); // 79-81
+    readText('TF_DATA_1'); readText('TF_DATA_2'); readText('TF_DATA_3'); readText('TF_DATA_4'); readText('TF_DATA_5'); readText('TF_DATA_6'); // 82-87
+    readText('TF_POWER_ASS_1'); readText('TF_POWER_ASS_2'); readText('TF_POWER_ASS_3'); readText('TF_POWER_ASS_4'); // 88-91
+    readText('TF_TORQUE_ASS_1'); readText('TF_TORQUE_ASS_2'); readText('TF_TORQUE_ASS_3'); readText('TF_TORQUE_ASS_4'); // 92-95
+    readText('TF_CADENCE_ASS_1'); readText('TF_CADENCE_ASS_2'); readText('TF_CADENCE_ASS_3'); readText('TF_CADENCE_ASS_4'); // 96-99
+    readText('TF_EMTB_ASS_1'); readText('TF_EMTB_ASS_2'); readText('TF_EMTB_ASS_3'); readText('TF_EMTB_ASS_4'); // 100-103
+    intWalkSpeed1 = rdInt(); intWalkSpeed2 = rdInt(); intWalkSpeed3 = rdInt(); intWalkSpeed4 = rdInt(); // 104-107
+    intWalkSpeedLimit = rdInt();                                         // 108
+    readBool('CB_WALK_TIME_ENA');                                        // 109
+    readText('TF_WALK_ASS_TIME');                                        // 110
+    intCruiseSpeed1 = rdInt(); intCruiseSpeed2 = rdInt(); intCruiseSpeed3 = rdInt(); intCruiseSpeed4 = rdInt(); // 111-114
+    readBool('CB_CRUISE_WHITOUT_PEDALING');                              // 115
+    intCruiseSpeed = rdInt();                                            // 116
+    readText('TF_TORQ_ADC_OFFSET');                                      // 117
+    readText('TF_NUM_DATA_AUTO_DISPLAY');                                // 118
+    const boolUnitsKilometers = rdBool();                                // 119
+    const boolUnitsMiles = rdBool();                                     // 120
+    readText('TF_ASSIST_THROTTLE_MIN');                                  // 121
+    readText('TF_ASSIST_THROTTLE_MAX');                                  // 122
+    readBool('CB_STREET_WALK');                                          // 123
+    const boolAssistStartupHybrid = rdBool();                            // 124
+    const boolStartupNone = rdBool();                                    // 125
+    const boolStartupSoc = rdBool();                                     // 126
+    const boolStartupVolts = rdBool();                                   // 127
+    readBool('CB_FIELD_WEAKENING_ENABLED');                              // 128
+    const strTorqueOffsetAdj = rd();                                     // 129
+    const strTorqueRangeAdj = rd();                                      // 130
+    const strTorqueAngleAdj = rd();                                      // 131
+    readText('TF_TORQ_PER_ADC_STEP_ADV');                                // 132
+    const boolSocAuto = rdBool();                                        // 133
+    const boolSocWh = rdBool();                                          // 134
+    const boolSocVolts = rdBool();                                       // 135
+    readBool('CB_ADC_STEP_ESTIM');                                       // 136
+    const boostCad = rdBool();                                           // 137
+    const boostSpeed = rdBool();                                         // 138
+    const boolDisplayType850C = rdBool();                                // 139
+    const boolThrottleLegal = rdBool();                                  // 140 (legacy)
+
+    // 141-151 optional group
+    let boolTemperatureSwitch, RB_eMTB_POWER_v, RB_eMTB_TORQUE_v, boolTemperatureSensorType;
+    let boolAlternativeMiles;
+    let l141 = rd();
+    if (l141 !== null) {
+      boolTemperatureSwitch = l141 === 'true';
+      RB_eMTB_POWER_v = rdBool(); RB_eMTB_TORQUE_v = rdBool();
+      readBool('CB_SMOOTH_START_ENABLED');
+      readText('TF_SMOOTH_START_RAMP');
+      boolTemperatureSensorType = rdBool();
+      readBool('CB_CRUISE_ENABLED');
+      intThrottleMode = rdInt(); intThrottleModeOnStreetMode = rdInt();
+      readText('TF_ASS_LEVELS_5_PERCENT');
+      boolAlternativeMiles = rdBool();
+    } else {
+      boolTemperatureSwitch = false; RB_eMTB_POWER_v = true; RB_eMTB_TORQUE_v = false;
+      setC('CB_SMOOTH_START_ENABLED', true); setV('TF_SMOOTH_START_RAMP', '35');
+      boolTemperatureSensorType = false; setC('CB_CRUISE_ENABLED', true);
+      setV('TF_ASS_LEVELS_5_PERCENT', '60'); boolAlternativeMiles = false;
+      intThrottleMode = boolOptionalAdcThrottle ? UNCONDITIONAL : DISABLED;
+      intThrottleModeOnStreetMode = (boolOptionalAdcThrottle && boolStreetThrottle)
+        ? (boolThrottleLegal ? PEDALING : UNCONDITIONAL) : DISABLED;
+    }
+
+    // 152-154
+    let l152 = rd();
+    if (l152 !== null) {
+      setRadio('RB_PWM_18KHZ', l152 === 'true');
+      setRadio('RB_PWM_19KHZ', rdBool());
+      readText('TF_OVERCURRENT_DELAY');
+    } else {
+      setRadio('RB_PWM_18KHZ', false); setRadio('RB_PWM_19KHZ', true);
+      setV('TF_OVERCURRENT_DELAY', '2');
+    }
+
+    // 155
+    let boolMotorTypeTSDZ8 = rdBool(); if (boolMotorTypeTSDZ8 === null) boolMotorTypeTSDZ8 = false;
+
+    // 156-157
+    let boolDisplayTypeEKD01 = null;
+    let l156 = rd();
+    if (l156 !== null) {
+      boolDisplayTypeEKD01 = l156 === 'true';
+      intAssistLevel5 = rdInt();
+    } else { boolDisplayTypeEKD01 = false; intAssistLevel5 = DISABLED; }
+
+    // 158
+    let boostAuto = rdBool(); if (boostAuto === null) boostAuto = false;
+
+    // 159
+    let l159 = rd(); if (l159 !== null) setV('TF_BATT_PACK_RESISTANCE', l159); else setV('TF_BATT_PACK_RESISTANCE', '200');
+
+    // 160-161
+    let l160 = rd();
+    let boolTorqueModesBasedOnPower = false;
+    if (l160 !== null) {
+      boolTorqueModesBasedOnPower = l160 === 'true';
+      readText('TF_TORQUE_MODES_REF_VOLT');
+    } else { boolTorqueModesBasedOnPower = false; setV('TF_TORQUE_MODES_REF_VOLT', '36'); }
+
+    applyLoadedFixups({
+      boolMotorTypeTSDZ2_36V, boolMotorTypeTSDZ2_48V,
+      boolBrakeSensor, boolOptionalAdcDisabled, boolOptionalAdcThrottle, boolOptionalAdcTemperature,
+      boolAssistStartupPower, boolAssistStartupTorque, boolAssistStartupCadence, boolAssistStartupEmtb, boolAssistStartupHybrid,
+      boolDisplayTypeVLCD5, boolDisplayTypeVLCD6, boolDisplayTypeXH18, boolDisplayType850C, boolDisplayTypeEKD01,
+      workOn, alwaysOn, boolCoasterBrake, boolTemperatureSwitch,
+      boolUnitsKilometers, boolUnitsMiles, boolAlternativeMiles,
+      boolStartupNone, boolStartupSoc, boolStartupVolts,
+      boolSocAuto, boolSocWh, boolSocVolts,
+      RB_eMTB_POWER_v, RB_eMTB_TORQUE_v, boolTemperatureSensorType,
+      boostCad, boostSpeed, boostAuto,
+      boolMotorTypeTSDZ8, boolTorqueModesBasedOnPower,
+      strTorqueOffsetAdj, strTorqueRangeAdj, strTorqueAngleAdj,
+    });
+  } catch (e) {
+    corrupt = true;
+    applyLoadedFixups(null);
+  }
+  if (corrupt) toast('Corrupt .ini file or invalid data', true);
+  if (name) { currentName = name; }
+  applyEnableRules();
+  applyDynamicLabels();
+}
+
+// mirrors Java post-read fixups (455-705)
+function applyLoadedFixups(fx) {
+  if (!fx) {
+    // partial load: just resync what we can
+    setV('TF_TORQ_PER_ADC_STEP', String(intTorqueAdcStep));
+    return;
+  }
+
+  // boost radio default (455)
+  if (!fx.boostCad && !fx.boostSpeed && !fx.boostAuto) setRadio('RB_BOOST_AT_ZERO_CADENCE', true);
+  else { setRadio('RB_BOOST_AT_ZERO_CADENCE', !!fx.boostCad); setRadio('RB_BOOST_AT_ZERO_SPEED', !!fx.boostSpeed); setRadio('RB_BOOST_AT_ZERO_AUTO', !!fx.boostAuto); }
+  if (fx.RB_eMTB_POWER_v !== undefined) { setRadio('RB_eMTB_POWER', !!fx.RB_eMTB_POWER_v); setRadio('RB_eMTB_TORQUE', !!fx.RB_eMTB_TORQUE_v); }
+  setRadio('RB_DISPLAY_WORK_ON', !!fx.workOn); setRadio('RB_DISPLAY_ALWAY_ON', !!fx.alwaysOn);
+
+  setV('TF_TORQ_PER_ADC_STEP', String(intTorqueAdcStep)); // 458
+
+  intTorqueOffsetAdj = fx.strTorqueOffsetAdj !== null && fx.strTorqueOffsetAdj !== undefined && !isNaN(parseInt(fx.strTorqueOffsetAdj, 10)) ? parseInt(fx.strTorqueOffsetAdj, 10) : MIDDLE_OFFSET_ADJ;
+  intTorqueRangeAdj  = fx.strTorqueRangeAdj  !== null && fx.strTorqueRangeAdj  !== undefined && !isNaN(parseInt(fx.strTorqueRangeAdj, 10))  ? parseInt(fx.strTorqueRangeAdj, 10)  : MIDDLE_RANGE_ADJ;
+  intTorqueAngleAdj  = fx.strTorqueAngleAdj  !== null && fx.strTorqueAngleAdj  !== undefined && !isNaN(parseInt(fx.strTorqueAngleAdj, 10))  ? parseInt(fx.strTorqueAngleAdj, 10)  : MIDDLE_ANGLE_ADJ;
+  setAdjText('TF_TORQ_ADC_OFFSET_ADJ', intTorqueOffsetAdj, MIDDLE_OFFSET_ADJ);
+  setAdjText('TF_TORQ_ADC_RANGE_ADJ', intTorqueRangeAdj, MIDDLE_RANGE_ADJ);
+  setAdjText('TF_TORQ_ADC_ANGLE_ADJ', intTorqueAngleAdj, MIDDLE_ANGLE_ADJ);
+
+  // assist mode combo (496-510)
+  if (fx.boolAssistStartupPower) setIdx('JCB_ASSIST_MODE_ON_STARTUP', POWER);
+  else if (fx.boolAssistStartupTorque) setIdx('JCB_ASSIST_MODE_ON_STARTUP', TORQUE);
+  else if (fx.boolAssistStartupCadence) setIdx('JCB_ASSIST_MODE_ON_STARTUP', CADENCE);
+  else if (fx.boolAssistStartupEmtb) setIdx('JCB_ASSIST_MODE_ON_STARTUP', EMTB);
+  else if (fx.boolAssistStartupHybrid) setIdx('JCB_ASSIST_MODE_ON_STARTUP', HYBRID);
+
+  // motor combo (512-520)
+  if (fx.boolMotorTypeTSDZ2_48V) setIdx('JCB_MOTOR_TYPE', TSDZ2_48V);
+  else if (fx.boolMotorTypeTSDZ2_36V) setIdx('JCB_MOTOR_TYPE', TSDZ2_36V);
+  else if (fx.boolMotorTypeTSDZ8) setIdx('JCB_MOTOR_TYPE', TSDZ8);
+  motorTypeChanged();
+
+  // display combo (522-536) - handler fires: assist level 5 coercion etc.
+  if (fx.boolDisplayTypeVLCD5) setIdx('JCB_DISPLAY_TYPE', VLCD5);
+  else if (fx.boolDisplayTypeVLCD6) setIdx('JCB_DISPLAY_TYPE', VLCD6);
+  else if (fx.boolDisplayTypeXH18) setIdx('JCB_DISPLAY_TYPE', XH18);
+  else if (fx.boolDisplayType850C) setIdx('JCB_DISPLAY_TYPE', C850);
+  else if (fx.boolDisplayTypeEKD01) setIdx('JCB_DISPLAY_TYPE', EKD01);
+  displayTypeChanged();
+
+  // assist level 5 (538-560)
+  setIdx('JCB_ASSIST_LEVEL_5_MODE', intAssistLevel5);
+  assistLevel5Changed();
+
+  // data on startup / soc calc / temp sensor / torque based (562-596)
+  if (fx.boolStartupNone) setIdx('JCB_DATA_ON_STARTUP', NONE);
+  else if (fx.boolStartupSoc) setIdx('JCB_DATA_ON_STARTUP', SOC);
+  else if (fx.boolStartupVolts) setIdx('JCB_DATA_ON_STARTUP', VOLTS);
+  if (fx.boolSocAuto) setIdx('JCB_SOC_CALC', AUTO);
+  else if (fx.boolSocWh) setIdx('JCB_SOC_CALC', WH);
+  else if (fx.boolSocVolts) setIdx('JCB_SOC_CALC', VOLTS);
+  setIdx('JCB_TEMP_SENSOR_TYPE', fx.boolTemperatureSensorType ? TMP36 : LM35);
+  setIdx('JCB_TORQUE_BASED', fx.boolTorqueModesBasedOnPower ? BASED_ON_POWER : BASED_ON_CURRENT);
+
+  // brake feature (598-610)
+  if (fx.boolBrakeSensor) setIdx('JCB_BRAKE_FEATURE', BRAKE_SENSOR);
+  else if (fx.boolCoasterBrake) setIdx('JCB_BRAKE_FEATURE', COASTER_BRAKE);
+  else if (fx.boolTemperatureSwitch) setIdx('JCB_BRAKE_FEATURE', TEMPERATURE_SWITCH);
+  else setIdx('JCB_BRAKE_FEATURE', DISABLED);
+  brakeFeatureChanged();
+
+  // optional ADC (612-620)
+  if (fx.boolOptionalAdcDisabled) setIdx('JCB_OPTIONAL_ADC', DISABLED);
+  else if (fx.boolOptionalAdcThrottle) setIdx('JCB_OPTIONAL_ADC', THROTTLE);
+  else if (fx.boolOptionalAdcTemperature) setIdx('JCB_OPTIONAL_ADC', TEMPERATURE);
+  throttleGate();
+
+  setIdx('JCB_THROTTLE_MODE', intThrottleMode);
+  setIdx('JCB_THROTTLE_MODE_STREET', intThrottleModeOnStreetMode);
+  if (IDX('JCB_THROTTLE_MODE_STREET') > IDX('JCB_THROTTLE_MODE')) setIdx('JCB_THROTTLE_MODE_STREET', IDX('JCB_THROTTLE_MODE'));
+
+  // eMTB legacy conversion (649-660)
+  ['TF_EMTB_ASS_1','TF_EMTB_ASS_2','TF_EMTB_ASS_3','TF_EMTB_ASS_4'].forEach(id => {
+    const v = parseInt(V(id), 10);
+    if (!isNaN(v) && v < 21) setV(id, String(intDiv(v * 127, 10)));
+  });
+
+  // units labels + speed texts (662-704)
+  const km = !!fx.boolUnitsKilometers;
+  if (km) {
+    el('lb_TF_MAX_SPEED').textContent = 'Max speed offroad mode (km/h)';
+    el('lb_TF_STREET_SPEED_LIM').textContent = 'Street speed limit (km/h)';
+    el('jLabelCruiseSpeedUnits').textContent = ' km/h';
+    el('jLabelWalkSpeedUnits').textContent = ' km/h x10';
+    setV('TF_MAX_SPEED', String(intMaxSpeed)); setV('TF_STREET_SPEED_LIM', String(intStreetSpeed));
+    setV('TF_WALK_ASS_SPEED_1', String(intWalkSpeed1)); setV('TF_WALK_ASS_SPEED_2', String(intWalkSpeed2));
+    setV('TF_WALK_ASS_SPEED_3', String(intWalkSpeed3)); setV('TF_WALK_ASS_SPEED_4', String(intWalkSpeed4));
+    setV('TF_WALK_ASS_SPEED_LIMIT', String(intWalkSpeedLimit));
+    setV('TF_CRUISE_SPEED_ENA', String(intCruiseSpeed));
+    setV('TF_CRUISE_ASS_1', String(intCruiseSpeed1)); setV('TF_CRUISE_ASS_2', String(intCruiseSpeed2));
+    setV('TF_CRUISE_ASS_3', String(intCruiseSpeed3)); setV('TF_CRUISE_ASS_4', String(intCruiseSpeed4));
+    setIdx('JCB_UNITS_TYPE', KILOMETERS);
+  } else {
+    el('lb_TF_MAX_SPEED').textContent = 'Max speed offroad mode (mph)';
+    el('lb_TF_STREET_SPEED_LIM').textContent = 'Street speed limit (mph)';
+    el('jLabelCruiseSpeedUnits').textContent = ' mph';
+    el('jLabelWalkSpeedUnits').textContent = ' mph x10';
+    setV('TF_MAX_SPEED', String(intDiv(intMaxSpeed * 10 + 5, 16))); setV('TF_STREET_SPEED_LIM', String(intDiv(intStreetSpeed * 10 + 5, 16)));
+    setV('TF_WALK_ASS_SPEED_1', String(intDiv(intWalkSpeed1 * 10 + 5, 16))); setV('TF_WALK_ASS_SPEED_2', String(intDiv(intWalkSpeed2 * 10 + 5, 16)));
+    setV('TF_WALK_ASS_SPEED_3', String(intDiv(intWalkSpeed3 * 10 + 5, 16))); setV('TF_WALK_ASS_SPEED_4', String(intDiv(intWalkSpeed4 * 10 + 5, 16)));
+    setV('TF_WALK_ASS_SPEED_LIMIT', String(intDiv(intWalkSpeedLimit * 10 + 5, 16)));
+    setV('TF_CRUISE_SPEED_ENA', String(intDiv(intCruiseSpeed * 10 + 5, 16)));
+    setV('TF_CRUISE_ASS_1', String(intDiv(intCruiseSpeed1 * 10 + 5, 16))); setV('TF_CRUISE_ASS_2', String(intDiv(intCruiseSpeed2 * 10 + 5, 16)));
+    setV('TF_CRUISE_ASS_3', String(intDiv(intCruiseSpeed3 * 10 + 5, 16))); setV('TF_CRUISE_ASS_4', String(intDiv(intCruiseSpeed4 * 10 + 5, 16)));
+  }
+  if (fx.boolUnitsMiles) setIdx('JCB_UNITS_TYPE', MILES);
+  else if (fx.boolAlternativeMiles) setIdx('JCB_UNITS_TYPE', ALTERNATIVE_MILES);
+}
+function setAdjText(id, val, middle) {
+  if (val === middle) setV(id, '0');
+  else if (val < middle) setV(id, '-' + (middle - val));
+  else setV(id, String(val - middle));
+}
+
+// ----- save: .ini + config.h (mirrors Java BTN_COMPILE handler 1430-2408) --
+function generateOutputs() {
+  const ini = [], h = [];
+  const H = (name, v) => h.push(`#define ${name} ${v}`);
+  const I = (v) => ini.push(String(v));
+  const B = (name, b) => { H(name, b ? 1 : 0); I(b); };
+  const T = (name, id) => { const t = V(id); H(name, t); I(t); };
+
+  const motor = MOTOR(), display = DISPLAY(), units = UNITS(), brake = BRAKE(), adc = ADC();
+  const bool36V = motor === TSDZ2_36V, bool48V = motor === TSDZ2_48V, bool8 = motor === TSDZ8;
+
+  H('MOTOR_TYPE', motor === TSDZ2_36V ? 1 : 0); I(bool36V); I(bool48V);            // 1-2
+  B('TORQUE_SENSOR_CALIBRATED', C('CB_TORQUE_CALIBRATION'));                        // 3
+  H('MOTOR_ACCELERATION', ' ' + V('TF_MOTOR_ACC')); I(V('TF_MOTOR_ACC'));           // 4 (Java uses two spaces)
+  B('MOTOR_ASSISTANCE_WITHOUT_PEDAL_ROTATION', C('CB_ASS_WITHOUT_PED'));            // 5
+  T('ASSISTANCE_WITHOUT_PEDAL_ROTATION_THRESHOLD', 'TF_ASS_WITHOUT_PED_THRES');     // 6
+  T('PEDAL_TORQUE_PER_10_BIT_ADC_STEP_X100', 'TF_TORQ_PER_ADC_STEP');               // 7
+  T('PEDAL_TORQUE_ADC_MAX', 'TF_TORQUE_ADC_MAX');                                   // 8
+  T('STARTUP_BOOST_TORQUE_FACTOR', 'TF_BOOST_TORQUE_FACTOR');                       // 9
+  T('MOTOR_BLOCKED_COUNTER_THRESHOLD', 'TF_MOTOR_BLOCK_TIME');                      // 10
+  T('MOTOR_BLOCKED_BATTERY_CURRENT_THRESHOLD_X10', 'TF_MOTOR_BLOCK_CURR');          // 11
+  T('MOTOR_BLOCKED_ERPS_THRESHOLD', 'TF_MOTOR_BLOCK_ERPS');                         // 12
+  T('STARTUP_BOOST_CADENCE_STEP', 'TF_BOOST_CADENCE_STEP');                         // 13
+  T('BATTERY_CURRENT_MAX', 'TF_BAT_CUR_MAX');                                       // 14
+  T('TARGET_MAX_BATTERY_POWER', 'TF_BATT_POW_MAX');                                 // 15
+  T('TARGET_MAX_BATTERY_CAPACITY', 'TF_BATT_CAPACITY');                             // 16
+  T('BATTERY_CELLS_NUMBER', 'TF_BATT_NUM_CELLS');                                   // 17
+  T('MOTOR_DECELERATION', 'TF_MOTOR_DEC');                                          // 18
+  T('BATTERY_LOW_VOLTAGE_CUT_OFF', 'TF_BATT_VOLT_CUT_OFF');                         // 19
+  T('ACTUAL_BATTERY_VOLTAGE_PERCENT', 'TF_BATT_VOLT_CAL');                          // 20
+  T('ACTUAL_BATTERY_CAPACITY_PERCENT', 'TF_BATT_CAPACITY_CAL');                     // 21
+  T('LI_ION_CELL_OVERVOLT', 'TF_BAT_CELL_OVER');                                    // 22
+  T('LI_ION_CELL_RESET_SOC_PERCENT', 'TF_BAT_CELL_SOC');                            // 23
+  T('LI_ION_CELL_VOLTS_FULL', 'TF_BAT_CELL_FULL');                                  // 24
+  T('LI_ION_CELL_VOLTS_3_OF_4', 'TF_BAT_CELL_3_4');                                 // 25
+  T('LI_ION_CELL_VOLTS_2_OF_4', 'TF_BAT_CELL_2_4');                                 // 26
+  T('LI_ION_CELL_VOLTS_1_OF_4', 'TF_BAT_CELL_1_4');                                 // 27
+  T('LI_ION_CELL_VOLTS_5_OF_6', 'TF_BAT_CELL_5_6');                                 // 28
+  T('LI_ION_CELL_VOLTS_4_OF_6', 'TF_BAT_CELL_4_6');                                 // 29
+  T('LI_ION_CELL_VOLTS_3_OF_6', 'TF_BAT_CELL_3_6');                                 // 30
+  T('LI_ION_CELL_VOLTS_2_OF_6', 'TF_BAT_CELL_2_6');                                 // 31
+  T('LI_ION_CELL_VOLTS_1_OF_6', 'TF_BAT_CELL_1_6');                                 // 32
+  T('LI_ION_CELL_VOLTS_EMPTY', 'TF_BAT_CELL_EMPTY');                                // 33
+  T('WHEEL_PERIMETER', 'TF_WHEEL_CIRCUMF');                                         // 34
+  H('WHEEL_MAX_SPEED', intMaxSpeed); I(intMaxSpeed);                                // 35
+  B('ENABLE_LIGHTS', C('CB_LIGHTS'));                                               // 36
+  B('ENABLE_WALK_ASSIST', C('CB_WALK_ASSIST_ENABLED'));                             // 37
+  B('ENABLE_BRAKE_SENSOR', brake === BRAKE_SENSOR || brake === TEMPERATURE_SWITCH); // 38
+  if (adc === DISABLED) { H('ENABLE_THROTTLE', 0); H('ENABLE_TEMPERATURE_LIMIT', 0); } I(adc === DISABLED);     // 39
+  if (adc === THROTTLE) { H('ENABLE_THROTTLE', 1); H('ENABLE_TEMPERATURE_LIMIT', 0); } I(adc === THROTTLE);     // 40
+  if (adc === TEMPERATURE) { H('ENABLE_THROTTLE', 0); H('ENABLE_TEMPERATURE_LIMIT', 1); } I(adc === TEMPERATURE);// 41
+  B('ENABLE_STREET_MODE_ON_STARTUP', C('CB_STREET_MODE_ON_START'));                 // 42
+  B('ENABLE_SET_PARAMETER_ON_STARTUP', C('CB_SET_PARAM_ON_START'));                 // 43
+  B('ENABLE_ODOMETER_COMPENSATION', C('CB_ODO_COMPENSATION'));                      // 44
+  B('STARTUP_BOOST_ON_STARTUP', C('CB_STARTUP_BOOST_ON_START'));                    // 45
+  B('TORQUE_SENSOR_ADV_ON_STARTUP', C('CB_TOR_SENSOR_ADV'));                        // 46
+  T('LIGHTS_CONFIGURATION_ON_STARTUP', 'TF_LIGHT_MODE_ON_START');                   // 47
+  const assist = IDX('JCB_ASSIST_MODE_ON_STARTUP');
+  if (assist === POWER) H('RIDING_MODE_ON_STARTUP', 1); I(assist === POWER);         // 48
+  if (assist === TORQUE) H('RIDING_MODE_ON_STARTUP', 2); I(assist === TORQUE);       // 49
+  if (assist === CADENCE) H('RIDING_MODE_ON_STARTUP', 3); I(assist === CADENCE);     // 50
+  if (assist === EMTB) H('RIDING_MODE_ON_STARTUP', 4); I(assist === EMTB);           // 51
+  T('LIGHTS_CONFIGURATION_1', 'TF_LIGHT_MODE_1');                                   // 52
+  T('LIGHTS_CONFIGURATION_2', 'TF_LIGHT_MODE_2');                                   // 53
+  T('LIGHTS_CONFIGURATION_3', 'TF_LIGHT_MODE_3');                                   // 54
+  B('STREET_MODE_POWER_LIMIT_ENABLED', C('CB_STREET_POWER_LIM'));                   // 55
+  T('STREET_MODE_POWER_LIMIT', 'TF_STREET_POWER_LIM');                              // 56
+  H('STREET_MODE_SPEED_LIMIT', intStreetSpeed); I(intStreetSpeed);                  // 57
+  const streetThr = adc === THROTTLE && IDX('JCB_THROTTLE_MODE_STREET') === UNCONDITIONAL;
+  H('STREET_MODE_THROTTLE_ENABLED', streetThr ? 1 : 0); I(streetThr);               // 58
+  B('STREET_MODE_CRUISE_ENABLED', C('CB_STREET_CRUISE'));                           // 59
+  T('ADC_THROTTLE_MIN_VALUE', 'TF_ADC_THROTTLE_MIN');                               // 60
+  T('ADC_THROTTLE_MAX_VALUE', 'TF_ADC_THROTTLE_MAX');                               // 61
+  T('MOTOR_TEMPERATURE_MIN_VALUE_LIMIT', 'TF_TEMP_MIN_LIM');                        // 62
+  T('MOTOR_TEMPERATURE_MAX_VALUE_LIMIT', 'TF_TEMP_MAX_LIM');                        // 63
+  B('ENABLE_TEMPERATURE_ERROR_MIN_LIMIT', C('CB_TEMP_ERR_MIN_LIM'));                // 64
+  B('ENABLE_VLCD6', display === VLCD6);                                             // 65
+  B('ENABLE_VLCD5', display === VLCD5);                                             // 66
+  B('ENABLE_XH18', display === XH18);                                               // 67
+  B('ENABLE_DISPLAY_WORKING_FLAG', R('RB_DISPLAY_WORK_ON'));                        // 68
+  B('ENABLE_DISPLAY_ALWAYS_ON', R('RB_DISPLAY_ALWAY_ON'));                          // 69
+  B('ENABLE_WHEEL_MAX_SPEED_FROM_DISPLAY', C('CB_MAX_SPEED_DISPLAY'));              // 70
+  T('DELAY_MENU_ON', 'TF_DELAY_MENU');                                              // 71
+  B('COASTER_BRAKE_ENABLED', brake === COASTER_BRAKE);                              // 72
+  T('COASTER_BRAKE_TORQUE_THRESHOLD', 'TF_COASTER_BRAKE_THRESHOLD');                // 73
+  B('ENABLE_AUTO_DATA_DISPLAY', C('CB_AUTO_DISPLAY_DATA'));                         // 74
+  B('STARTUP_ASSIST_ENABLED', C('CB_STARTUP_ASSIST_ENABLED'));                      // 75
+  T('DELAY_DISPLAY_DATA_1', 'TF_DELAY_DATA_1');                                     // 76
+  T('DELAY_DISPLAY_DATA_2', 'TF_DELAY_DATA_2');                                     // 77
+  T('DELAY_DISPLAY_DATA_3', 'TF_DELAY_DATA_3');                                     // 78
+  T('DELAY_DISPLAY_DATA_4', 'TF_DELAY_DATA_4');                                     // 79
+  T('DELAY_DISPLAY_DATA_5', 'TF_DELAY_DATA_5');                                     // 80
+  T('DELAY_DISPLAY_DATA_6', 'TF_DELAY_DATA_6');                                     // 81
+  T('DISPLAY_DATA_1', 'TF_DATA_1');                                                 // 82
+  T('DISPLAY_DATA_2', 'TF_DATA_2');                                                 // 83
+  T('DISPLAY_DATA_3', 'TF_DATA_3');                                                 // 84
+  T('DISPLAY_DATA_4', 'TF_DATA_4');                                                 // 85
+  T('DISPLAY_DATA_5', 'TF_DATA_5');                                                 // 86
+  T('DISPLAY_DATA_6', 'TF_DATA_6');                                                 // 87
+  T('POWER_ASSIST_LEVEL_1', 'TF_POWER_ASS_1');                                      // 88
+  T('POWER_ASSIST_LEVEL_2', 'TF_POWER_ASS_2');                                      // 89
+  T('POWER_ASSIST_LEVEL_3', 'TF_POWER_ASS_3');                                      // 90
+  T('POWER_ASSIST_LEVEL_4', 'TF_POWER_ASS_4');                                      // 91
+  T('TORQUE_ASSIST_LEVEL_1', 'TF_TORQUE_ASS_1');                                    // 92
+  T('TORQUE_ASSIST_LEVEL_2', 'TF_TORQUE_ASS_2');                                    // 93
+  T('TORQUE_ASSIST_LEVEL_3', 'TF_TORQUE_ASS_3');                                    // 94
+  T('TORQUE_ASSIST_LEVEL_4', 'TF_TORQUE_ASS_4');                                    // 95
+  T('CADENCE_ASSIST_LEVEL_1', 'TF_CADENCE_ASS_1');                                  // 96
+  T('CADENCE_ASSIST_LEVEL_2', 'TF_CADENCE_ASS_2');                                  // 97
+  T('CADENCE_ASSIST_LEVEL_3', 'TF_CADENCE_ASS_3');                                  // 98
+  T('CADENCE_ASSIST_LEVEL_4', 'TF_CADENCE_ASS_4');                                  // 99
+  T('EMTB_ASSIST_LEVEL_1', 'TF_EMTB_ASS_1');                                        // 100
+  T('EMTB_ASSIST_LEVEL_2', 'TF_EMTB_ASS_2');                                        // 101
+  T('EMTB_ASSIST_LEVEL_3', 'TF_EMTB_ASS_3');                                        // 102
+  T('EMTB_ASSIST_LEVEL_4', 'TF_EMTB_ASS_4');                                        // 103
+  H('WALK_ASSIST_LEVEL_1', intWalkSpeed1); I(intWalkSpeed1);                        // 104
+  H('WALK_ASSIST_LEVEL_2', intWalkSpeed2); I(intWalkSpeed2);                        // 105
+  H('WALK_ASSIST_LEVEL_3', intWalkSpeed3); I(intWalkSpeed3);                        // 106
+  H('WALK_ASSIST_LEVEL_4', intWalkSpeed4); I(intWalkSpeed4);                        // 107
+  H('WALK_ASSIST_THRESHOLD_SPEED_X10', intWalkSpeedLimit); I(intWalkSpeedLimit);    // 108
+  B('WALK_ASSIST_DEBOUNCE_ENABLED', C('CB_WALK_TIME_ENA'));                         // 109
+  T('WALK_ASSIST_DEBOUNCE_TIME', 'TF_WALK_ASS_TIME');                               // 110
+  H('CRUISE_TARGET_SPEED_LEVEL_1', intCruiseSpeed1); I(intCruiseSpeed1);            // 111
+  H('CRUISE_TARGET_SPEED_LEVEL_2', intCruiseSpeed2); I(intCruiseSpeed2);            // 112
+  H('CRUISE_TARGET_SPEED_LEVEL_3', intCruiseSpeed3); I(intCruiseSpeed3);            // 113
+  H('CRUISE_TARGET_SPEED_LEVEL_4', intCruiseSpeed4); I(intCruiseSpeed4);            // 114
+  B('CRUISE_MODE_WALK_ENABLED', C('CB_CRUISE_WHITOUT_PEDALING'));                   // 115
+  H('CRUISE_THRESHOLD_SPEED', intCruiseSpeed); I(intCruiseSpeed);                   // 116
+  T('PEDAL_TORQUE_ADC_OFFSET', 'TF_TORQ_ADC_OFFSET');                               // 117
+  T('AUTO_DATA_NUMBER_DISPLAY', 'TF_NUM_DATA_AUTO_DISPLAY');                        // 118
+  if (units === KILOMETERS || units === ALTERNATIVE_MILES) H('UNITS_TYPE', 0); I(units === KILOMETERS); // 119
+  if (units === MILES) H('UNITS_TYPE', display === VLCD6 ? 0 : 1); I(units === MILES); // 120
+  T('ASSIST_THROTTLE_MIN_VALUE', 'TF_ASSIST_THROTTLE_MIN');                         // 121
+  T('ASSIST_THROTTLE_MAX_VALUE', 'TF_ASSIST_THROTTLE_MAX');                         // 122
+  B('STREET_MODE_WALK_ENABLED', C('CB_STREET_WALK'));                               // 123
+  if (assist === HYBRID) H('RIDING_MODE_ON_STARTUP', 5); I(assist === HYBRID);       // 124
+  const dataOn = IDX('JCB_DATA_ON_STARTUP');
+  if (dataOn === NONE) H('DATA_DISPLAY_ON_STARTUP', 0); I(dataOn === NONE);          // 125
+  if (dataOn === SOC) H('DATA_DISPLAY_ON_STARTUP', 1); I(dataOn === SOC);            // 126
+  if (dataOn === VOLTS) H('DATA_DISPLAY_ON_STARTUP', 2); I(dataOn === VOLTS);        // 127
+  B('FIELD_WEAKENING_ENABLED', C('CB_FIELD_WEAKENING_ENABLED'));                    // 128
+  H('PEDAL_TORQUE_ADC_OFFSET_ADJ', intTorqueOffsetAdj); I(intTorqueOffsetAdj);      // 129
+  H('PEDAL_TORQUE_ADC_RANGE_ADJ', intTorqueRangeAdj); I(intTorqueRangeAdj);         // 130
+  H('PEDAL_TORQUE_ADC_ANGLE_ADJ', intAdcPedalTorqueAngleAdjArray[intTorqueAngleAdj]); I(intTorqueAngleAdj); // 131
+  T('PEDAL_TORQUE_PER_10_BIT_ADC_STEP_ADV_X100', 'TF_TORQ_PER_ADC_STEP_ADV');       // 132
+  const soc = IDX('JCB_SOC_CALC');
+  if (soc === AUTO) H('SOC_PERCENT_CALC', 0); I(soc === AUTO);                       // 133
+  if (soc === WH) H('SOC_PERCENT_CALC', 1); I(soc === WH);                           // 134
+  if (soc === VOLTS) H('SOC_PERCENT_CALC', 2); I(soc === VOLTS);                     // 135
+  B('TORQUE_SENSOR_ESTIMATED', C('CB_ADC_STEP_ESTIM'));                             // 136
+  if (R('RB_BOOST_AT_ZERO_CADENCE')) H('STARTUP_BOOST_AT_ZERO', 0); I(R('RB_BOOST_AT_ZERO_CADENCE')); // 137
+  if (R('RB_BOOST_AT_ZERO_SPEED')) H('STARTUP_BOOST_AT_ZERO', 1); I(R('RB_BOOST_AT_ZERO_SPEED'));     // 138
+  B('ENABLE_850C', display === C850);                                               // 139
+  const thrLegal = adc === THROTTLE && IDX('JCB_THROTTLE_MODE_STREET') === PEDALING;
+  H('STREET_MODE_THROTTLE_LEGAL', thrLegal ? 1 : 0); I(thrLegal);                   // 140
+  B('BRAKE_TEMPERATURE_SWITCH', brake === TEMPERATURE_SWITCH);                      // 141
+  if (R('RB_eMTB_POWER')) H('eMTB_BASED_ON_POWER', 1); I(R('RB_eMTB_POWER'));        // 142
+  if (R('RB_eMTB_TORQUE')) H('eMTB_BASED_ON_POWER', 0); I(R('RB_eMTB_TORQUE'));      // 143
+  B('SMOOTH_START_ENABLED', C('CB_SMOOTH_START_ENABLED'));                          // 144
+  T('SMOOTH_START_SET_PERCENT', 'TF_SMOOTH_START_RAMP');                            // 145
+  H('TEMPERATURE_SENSOR_TYPE', IDX('JCB_TEMP_SENSOR_TYPE') === LM35 ? 0 : 1); I(IDX('JCB_TEMP_SENSOR_TYPE') === TMP36); // 146
+  B('CRUISE_MODE_ENABLED', C('CB_CRUISE_ENABLED'));                                 // 147
+  H('THROTTLE_MODE', IDX('JCB_THROTTLE_MODE')); I(IDX('JCB_THROTTLE_MODE'));        // 148
+  H('STREET_MODE_THROTTLE_MODE', IDX('JCB_THROTTLE_MODE_STREET')); I(IDX('JCB_THROTTLE_MODE_STREET')); // 149
+  T('ASSIST_LEVEL_5_PERCENT', 'TF_ASS_LEVELS_5_PERCENT');                           // 150
+  const altMiles = units === ALTERNATIVE_MILES || (units === MILES && display === VLCD6);
+  H('ALTERNATIVE_MILES', altMiles ? 1 : 0); I(units === ALTERNATIVE_MILES);         // 151
+  if (R('RB_PWM_18KHZ')) H('PWM_FREQ', 18); I(R('RB_PWM_18KHZ'));                    // 152
+  if (R('RB_PWM_19KHZ')) H('PWM_FREQ', 19); I(R('RB_PWM_19KHZ'));                    // 153
+  T('OVERCURRENT_DELAY', 'TF_OVERCURRENT_DELAY');                                   // 154
+  B('MOTOR_TYPE_TSDZ8', bool8);                                                     // 155
+  B('ENABLE_EKD01', display === EKD01);                                             // 156
+  H('ASSIST_LEVEL_5_MODE', IDX('JCB_ASSIST_LEVEL_5_MODE')); I(IDX('JCB_ASSIST_LEVEL_5_MODE')); // 157
+  if (R('RB_BOOST_AT_ZERO_AUTO')) H('STARTUP_BOOST_AT_ZERO', 2); I(R('RB_BOOST_AT_ZERO_AUTO'));     // 158
+  T('BATTERY_PACK_RESISTANCE', 'TF_BATT_PACK_RESISTANCE');                          // 159
+  H('TORQUE_MODES_BASED_ON_POWER', IDX('JCB_TORQUE_BASED') === BASED_ON_POWER ? 1 : 0); I(IDX('JCB_TORQUE_BASED') === BASED_ON_POWER); // 160
+  T('POWER_BASED_REFERENCE_VOLTAGE', 'TF_TORQUE_MODES_REF_VOLT');                   // 161
+
+  const header = "/*\r\n * config.h\r\n *\r\n *  Automatically created by TSDS2 Parameter Configurator\r\n *  Author: stancecoke\r\n */\r\n\r\n#ifndef CONFIG_H_\r\n#define CONFIG_H_\r\n";
+  // Java println() adds one more newline after the header block (which itself ends in \r\n)
+  const configH = header + '\n' + h.map(l => l + '\n').join('') + "\r\n#endif /* CONFIG_H_ */\n";
+  return { ini: ini.join('\n') + '\n', configH };
+}
+
+// ----- TSDZ8 hex generation (mirrors mstrens_generate_hex_file 886-1427) ----
+function generateTsdz8Hex() {
+  let decAdr = 61440;
+  const out = [];
+  const hx = (n, w) => n.toString(16).padStart(w, '0');
+  function line(value) {
+    const v = value & 0xFFFF;
+    const s = ':02' + hx(decAdr, 4) + '00' + hx(v & 0xFF, 2) + hx((v >> 8) & 0xFF, 2);
+    let sum = 0;
+    for (let k = 1; k < s.length; k += 2) sum += parseInt(s.substring(k, k + 2), 16);
+    out.push(s + hx((-sum) & 0xFF, 2));
+    decAdr += 2;
+  }
+  const P = (id) => parseInt(V(id), 10);
+  const C1 = (b) => line(b ? 1 : 0);
+  const motor = MOTOR(), display = DISPLAY(), units = UNITS(), brake = BRAKE(), adc = ADC(), assist = IDX('JCB_ASSIST_MODE_ON_STARTUP');
+
+  out.push(':020000041000EA');
+  out.push(':02ff0000FF0000');
+  TSDZ8_HEADER.forEach(line);
+  line(motor === TSDZ2_36V ? 1 : 0);
+  C1(C('CB_TORQUE_CALIBRATION'));
+  line(P('TF_MOTOR_ACC'));
+  C1(C('CB_ASS_WITHOUT_PED'));
+  line(P('TF_ASS_WITHOUT_PED_THRES'));
+  line(P('TF_TORQ_PER_ADC_STEP'));
+  line(P('TF_TORQUE_ADC_MAX'));
+  line(P('TF_BOOST_TORQUE_FACTOR'));
+  line(P('TF_MOTOR_BLOCK_TIME'));
+  line(P('TF_MOTOR_BLOCK_CURR'));
+  line(P('TF_MOTOR_BLOCK_ERPS'));
+  line(P('TF_BOOST_CADENCE_STEP'));
+  line(P('TF_BAT_CUR_MAX'));
+  line(P('TF_BATT_POW_MAX'));
+  line(P('TF_BATT_CAPACITY'));
+  line(P('TF_BATT_NUM_CELLS'));
+  line(P('TF_MOTOR_DEC'));
+  line(P('TF_BATT_VOLT_CUT_OFF'));
+  line(P('TF_BATT_VOLT_CAL'));
+  line(P('TF_BATT_CAPACITY_CAL'));
+  [ 'TF_BAT_CELL_OVER','TF_BAT_CELL_SOC','TF_BAT_CELL_FULL','TF_BAT_CELL_3_4','TF_BAT_CELL_2_4','TF_BAT_CELL_1_4',
+    'TF_BAT_CELL_5_6','TF_BAT_CELL_4_6','TF_BAT_CELL_3_6','TF_BAT_CELL_2_6','TF_BAT_CELL_1_6','TF_BAT_CELL_EMPTY' ]
+    .forEach(id => line(Math.trunc(parseFloat(V(id)) * 100)));
+  line(P('TF_WHEEL_CIRCUMF'));
+  line(intMaxSpeed);
+  C1(C('CB_LIGHTS'));
+  C1(C('CB_WALK_ASSIST_ENABLED'));
+  C1(brake === BRAKE_SENSOR || brake === TEMPERATURE_SWITCH);
+  if (adc === DISABLED) { line(0); line(0); }
+  if (adc === THROTTLE) { line(1); line(0); }
+  if (adc === TEMPERATURE) { line(0); line(1); }
+  C1(C('CB_STREET_MODE_ON_START'));
+  C1(C('CB_SET_PARAM_ON_START'));
+  C1(C('CB_ODO_COMPENSATION'));
+  C1(C('CB_STARTUP_BOOST_ON_START'));
+  C1(C('CB_TOR_SENSOR_ADV'));
+  line(P('TF_LIGHT_MODE_ON_START'));
+  line(assist + 1); // RIDING_MODE_ON_STARTUP 1..5
+  line(P('TF_LIGHT_MODE_1'));
+  line(P('TF_LIGHT_MODE_2'));
+  line(P('TF_LIGHT_MODE_3'));
+  C1(C('CB_STREET_POWER_LIM'));
+  line(P('TF_STREET_POWER_LIM'));
+  line(intStreetSpeed);
+  C1(adc === THROTTLE && IDX('JCB_THROTTLE_MODE_STREET') === UNCONDITIONAL);
+  C1(C('CB_STREET_CRUISE'));
+  line(P('TF_ADC_THROTTLE_MIN'));
+  line(P('TF_ADC_THROTTLE_MAX'));
+  line(P('TF_TEMP_MIN_LIM'));
+  line(P('TF_TEMP_MAX_LIM'));
+  C1(C('CB_TEMP_ERR_MIN_LIM'));
+  C1(display === VLCD6);
+  C1(display === VLCD5);
+  C1(display === XH18);
+  C1(R('RB_DISPLAY_WORK_ON'));
+  C1(R('RB_DISPLAY_ALWAY_ON'));
+  C1(C('CB_MAX_SPEED_DISPLAY'));
+  line(P('TF_DELAY_MENU'));
+  C1(brake === COASTER_BRAKE);
+  line(P('TF_COASTER_BRAKE_THRESHOLD'));
+  C1(C('CB_AUTO_DISPLAY_DATA'));
+  C1(C('CB_STARTUP_ASSIST_ENABLED'));
+  line(P('TF_DELAY_DATA_1')); line(P('TF_DELAY_DATA_2')); line(P('TF_DELAY_DATA_3'));
+  line(P('TF_DELAY_DATA_4')); line(P('TF_DELAY_DATA_5')); line(P('TF_DELAY_DATA_6'));
+  line(P('TF_DATA_1')); line(P('TF_DATA_2')); line(P('TF_DATA_3'));
+  line(P('TF_DATA_4')); line(P('TF_DATA_5')); line(P('TF_DATA_6'));
+  line(P('TF_POWER_ASS_1')); line(P('TF_POWER_ASS_2')); line(P('TF_POWER_ASS_3')); line(P('TF_POWER_ASS_4'));
+  line(P('TF_TORQUE_ASS_1')); line(P('TF_TORQUE_ASS_2')); line(P('TF_TORQUE_ASS_3')); line(P('TF_TORQUE_ASS_4'));
+  line(P('TF_CADENCE_ASS_1')); line(P('TF_CADENCE_ASS_2')); line(P('TF_CADENCE_ASS_3')); line(P('TF_CADENCE_ASS_4'));
+  line(P('TF_EMTB_ASS_1')); line(P('TF_EMTB_ASS_2')); line(P('TF_EMTB_ASS_3')); line(P('TF_EMTB_ASS_4'));
+  line(intWalkSpeed1); line(intWalkSpeed2); line(intWalkSpeed3); line(intWalkSpeed4);
+  line(intWalkSpeedLimit);
+  C1(C('CB_WALK_TIME_ENA'));
+  line(P('TF_WALK_ASS_TIME'));
+  line(intCruiseSpeed1); line(intCruiseSpeed2); line(intCruiseSpeed3); line(intCruiseSpeed4);
+  C1(C('CB_CRUISE_WHITOUT_PEDALING'));
+  line(intCruiseSpeed);
+  line(P('TF_TORQ_ADC_OFFSET'));
+  line(P('TF_NUM_DATA_AUTO_DISPLAY'));
+  if (units === KILOMETERS || units === ALTERNATIVE_MILES) line(0);
+  if (units === MILES) line(display === VLCD6 ? 0 : 1);
+  line(P('TF_ASSIST_THROTTLE_MIN'));
+  line(P('TF_ASSIST_THROTTLE_MAX'));
+  C1(C('CB_STREET_WALK'));
+  line(IDX('JCB_DATA_ON_STARTUP'));
+  C1(C('CB_FIELD_WEAKENING_ENABLED'));
+  line(intTorqueOffsetAdj);
+  line(intTorqueRangeAdj);
+  line(intAdcPedalTorqueAngleAdjArray[intTorqueAngleAdj]);
+  line(P('TF_TORQ_PER_ADC_STEP_ADV'));
+  line(IDX('JCB_SOC_CALC'));
+  C1(C('CB_ADC_STEP_ESTIM'));
+  if (R('RB_BOOST_AT_ZERO_CADENCE')) line(0);
+  if (R('RB_BOOST_AT_ZERO_SPEED')) line(1);
+  if (R('RB_BOOST_AT_ZERO_AUTO')) line(2);
+  C1(display === C850);
+  C1(adc === THROTTLE && IDX('JCB_THROTTLE_MODE_STREET') === PEDALING);
+  C1(brake === TEMPERATURE_SWITCH);
+  C1(R('RB_eMTB_POWER'));
+  C1(C('CB_SMOOTH_START_ENABLED'));
+  line(P('TF_SMOOTH_START_RAMP'));
+  line(IDX('JCB_TEMP_SENSOR_TYPE') === LM35 ? 0 : 1);
+  C1(C('CB_CRUISE_ENABLED'));
+  line(IDX('JCB_THROTTLE_MODE'));
+  line(IDX('JCB_THROTTLE_MODE_STREET'));
+  line(P('TF_ASS_LEVELS_5_PERCENT'));
+  C1(units === ALTERNATIVE_MILES || (units === MILES && display === VLCD6));
+  if (R('RB_PWM_18KHZ')) line(18);
+  if (R('RB_PWM_19KHZ')) line(19);
+  line(P('TF_OVERCURRENT_DELAY'));
+  C1(motor === TSDZ8);
+  C1(display === EKD01);
+  line(IDX('JCB_ASSIST_LEVEL_5_MODE'));
+  C1(C('CB_STARTUP_ASSIST_SPEED_LIMIT_ENABLED'));
+  line(P('TF_BATT_PACK_RESISTANCE'));
+  line(IDX('JCB_TORQUE_BASED') === BASED_ON_CURRENT ? 0 : 1);
+  line(P('TF_TORQUE_MODES_REF_VOLT'));
+  out.push(':00000001FF');
+  return out.join('\n') + '\n';
+}
+
+// ----- settings library (localStorage) --------------------------------------
+const LS_EXP = 'tsdz2web.experimental', LS_PROV = 'tsdz2web.proven', LS_LAST = 'tsdz2web.last';
+let currentName = '';
+let defaultsFiles = []; // [{name, ini}] from the server
+
+const lsGet = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
+const lsSet = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+
+function timestampName() {
+  const d = new Date();
+  const p = (n, w = 2) => String(n).padStart(w, '0');
+  const off = -d.getTimezoneOffset();
+  const sign = off >= 0 ? '+' : '-';
+  const tz = sign + p(Math.floor(Math.abs(off) / 60)) + p(Math.abs(off) % 60);
+  return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}${tz}`;
+}
+
+function renderLists() {
+  const exp = lsGet(LS_EXP, []);
+  const expSel = el('expSet');
+  expSel.innerHTML = '';
+  exp.forEach(f => { const o = document.createElement('option'); o.textContent = f.name; o._ini = f.ini; expSel.append(o); });
+
+  const provSel = el('provSet');
+  provSel.innerHTML = '';
+  const g1 = document.createElement('optgroup'); g1.label = 'Defaults (repository)';
+  defaultsFiles.forEach(f => { const o = document.createElement('option'); o.textContent = f.name; o._ini = f.ini; g1.append(o); });
+  const g2 = document.createElement('optgroup'); g2.label = 'Proven (this browser)';
+  lsGet(LS_PROV, []).forEach(f => { const o = document.createElement('option'); o.textContent = f.name; o._ini = f.ini; g2.append(o); });
+  provSel.append(g1, g2);
+}
+
+function saveExperimentalCopy() {
+  const { ini } = generateOutputs();
+  const name = timestampName() + '.ini';
+  const exp = lsGet(LS_EXP, []);
+  exp.unshift({ name, ini });
+  lsSet(LS_EXP, exp.slice(0, 50));
+  renderLists();
+  return name;
+}
+
+// ----- compile --------------------------------------------------------------
+async function compile() {
+  const { ini, configH } = generateOutputs();
+  const name = saveExperimentalCopy();
+  lsSet(LS_LAST, { source: 'exp', name });
+
+  if (MOTOR() === TSDZ8) {
+    downloadFile('TSDZ8_config.hex', generateTsdz8Hex());
+    toast('TSDZ8_config.hex generated (client-side, like the Java app)');
+    return;
+  }
+  try {
+    const r = await fetch('/api/compile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name.replace(/\.ini$/, ''), ini, configH }),
+    });
+    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || r.statusText);
+    const { guid } = await r.json();
+    location.href = '/compile/' + guid;
+  } catch (e) {
+    toast('Compile request failed: ' + e.message, true);
+  }
+}
+
+function downloadFile(name, text) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'application/octet-stream' }));
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+// ----- toasts ----------------------------------------------------------------
+function toast(msg, isError) {
+  const t = document.createElement('div');
+  t.className = 'toast' + (isError ? ' error' : '');
+  t.textContent = msg;
+  el('toasts').append(t);
+  setTimeout(() => t.remove(), isError ? 8000 : 4000);
+}
+
+// ----- wiring ----------------------------------------------------------------
+function wire() {
+  document.querySelectorAll('#tabs button').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('#tabs button').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.pane').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    el('pane' + b.dataset.tab).classList.add('active');
+  }));
+
+  // field events
+  GROUPS.forEach(g => g.fields.forEach(f => {
+    const ids = [f.id];
+    if (f.inline) ids.push(f.inline.id);
+    if (f.extra) ids.push(f.extra.id);
+    if (f.t === 'radio') f.radios.forEach(r => ids.push(r.id));
+    ids.forEach(id => {
+      const n = el(id);
+      if (!n) return;
+      if (n.type === 'text') {
+        n.addEventListener('input', () => onUserChange(id));
+        n.addEventListener('change', () => { onUserChange(id); onBlurField(id); });
+      } else {
+        n.addEventListener('change', () => onUserChange(id));
+      }
+    });
+  }));
+
+  el('expSet').addEventListener('change', (e) => {
+    const o = e.target.selectedOptions[0];
+    if (o && o._ini) { loadIni(o._ini, o.textContent); lsSet(LS_LAST, { source: 'exp', name: o.textContent }); }
+  });
+  el('provSet').addEventListener('change', (e) => {
+    const o = e.target.selectedOptions[0];
+    if (o && o._ini) { loadIni(o._ini, o.textContent); lsSet(LS_LAST, { source: 'prov', name: o.textContent }); }
+  });
+
+  el('BTN_COPY_FILE_INI').addEventListener('click', () => {
+    const o = el('expSet').selectedOptions[0];
+    if (!o) { toast('Select a file in Experimental Settings first', true); return; }
+    const suggested = el('provSet').selectedOptions[0]?.textContent || 'My_settings.ini';
+    let name = prompt('New file name (.ini)', suggested);
+    if (!name) return;
+    if (!(name.length > 4 && name.slice(-4).toLowerCase() === '.ini')) name += '.ini';
+    const prov = lsGet(LS_PROV, []);
+    if (prov.some(f => f.name === name) || defaultsFiles.some(f => f.name === name)) {
+      if (!confirm(name + ' file already exists, overwrite?')) return;
+    }
+    lsSet(LS_PROV, [{ name, ini: o._ini }, ...prov.filter(f => f.name !== name)]);
+    renderLists();
+  });
+
+  el('BTN_IMPORT').addEventListener('click', () => el('fileIni').click());
+  el('fileIni').addEventListener('change', async (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    loadIni(await f.text(), f.name);
+    toast('Loaded ' + f.name);
+    e.target.value = '';
+  });
+  el('BTN_EXPORT').addEventListener('click', () => {
+    const { ini } = generateOutputs();
+    downloadFile(currentName || timestampName() + '.ini', ini);
+  });
+  el('BTN_COMPILE').addEventListener('click', compile);
+}
+
+// ----- startup ---------------------------------------------------------------
+async function init() {
+  buildUI();
+  wire();
+  renderLists();
+
+  try {
+    const v = await (await fetch('/api/version')).json();
+    strLastCommit = v.version || '';
+    if (MOTOR() !== TSDZ8) el('LB_LAST_COMMIT').textContent = strLastCommit || 'Last commit';
+  } catch { /* offline defaults */ }
+
+  try {
+    const d = await (await fetch('/api/defaults')).json();
+    defaultsFiles = d.files || [];
+    renderLists();
+  } catch {
+    toast('Could not load default settings from the server', true);
+  }
+
+  // auto-load last settings (mirrors Java lastSettingsFile), else 48V default
+  const last = lsGet(LS_LAST, null);
+  let loaded = false;
+  if (last) {
+    const pool = last.source === 'prov' ? [...defaultsFiles, ...lsGet(LS_PROV, [])] : lsGet(LS_EXP, []);
+    const hit = pool.find(f => f.name === last.name);
+    if (hit) { loadIni(hit.ini, hit.name); loaded = true; }
+  }
+  if (!loaded) {
+    const def = defaultsFiles.find(f => /48V/i.test(f.name)) || defaultsFiles[0];
+    if (def) loadIni(def.ini, def.name);
+  }
+  applyEnableRules();
+  applyDynamicLabels();
+}
+
+init();
+</script>
+</body>
+</html>
