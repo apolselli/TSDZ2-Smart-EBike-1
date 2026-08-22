@@ -22,7 +22,7 @@
  .pane{display:none}
  .pane.active{display:block}
  .groups{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start}
- .group{border:1px solid var(--line);border-radius:6px;padding:8px 10px 10px;flex:1 1 280px;min-width:260px}
+ .group{border:1px solid var(--line);border-radius:6px;padding:8px 10px 10px;flex:1 1 280px;min-width:260px;margin-bottom:12px}
  .group>h2{font-size:13px;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid var(--line)}
  .row{display:flex;align-items:center;gap:6px;margin:4px 0;min-height:26px;flex-wrap:wrap}
  .row label{flex:1 1 auto}
@@ -434,10 +434,14 @@ let intTorqueOffsetAdj=MIDDLE_OFFSET_ADJ, intTorqueRangeAdj=MIDDLE_RANGE_ADJ, in
 let intThrottleMode=DISABLED, intThrottleModeOnStreetMode=DISABLED, intAssistLevel5=DISABLED;
 let strLastCommit = '';
 
-// radio group membership: radio id -> group field id
+// radio group membership: radio id -> group field id, group id -> member radio ids
 const RADIO_GROUP = {};
+const RADIO_MEMBERS = {};
 GROUPS.forEach(g => g.fields.forEach(f => {
-  if (f.t === 'radio') f.radios.forEach(r => RADIO_GROUP[r.id] = f.id);
+  if (f.t === 'radio') {
+    f.radios.forEach(r => RADIO_GROUP[r.id] = f.id);
+    RADIO_MEMBERS[f.id] = f.radios.map(r => r.id);
+  }
 }));
 
 const V = (id) => S[id];                 // text value
@@ -579,6 +583,10 @@ function buildUI() {
 }
 
 function syncField(id) {
+  // radio groups have no DOM node of their own (only the members share its
+  // name), so syncing the group means checking the right member radio
+  const members = RADIO_MEMBERS[id];
+  if (members) { members.forEach(r => { const n = el(r); if (n) n.checked = R(r); }); return; }
   const node = el(id);
   if (!node) return;
   if (node.type === 'checkbox') node.checked = !!S[id];
