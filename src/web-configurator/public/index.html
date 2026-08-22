@@ -24,8 +24,12 @@
  .groups{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start}
  .group{border:1px solid var(--line);border-radius:6px;padding:8px 10px 10px;flex:1 1 280px;min-width:260px}
  .group>h2{font-size:13px;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid var(--line)}
- .row{display:flex;align-items:center;gap:6px;margin:4px 0;min-height:26px}
+ .row{display:flex;align-items:center;gap:6px;margin:4px 0;min-height:26px;flex-wrap:wrap}
  .row label{flex:1 1 auto}
+ .help{flex:1 1 100%;color:#5a6673;font-size:11px;line-height:14px;margin:0 0 3px}
+ .help .txt{display:block;white-space:pre-line}
+ .help.clamped .txt{max-height:28px;overflow:hidden}
+ .help .more{color:var(--accent);cursor:pointer;white-space:nowrap;text-decoration:underline}
  .row input[type=text]{width:72px;text-align:right;padding:3px 5px;font:inherit;border:1px solid var(--line);border-radius:4px}
  .row input:disabled{background:#eef1f5;color:#8a94a1}
  .row select{padding:3px 5px;font:inherit;border:1px solid var(--line);border-radius:4px;background:#fff}
@@ -307,6 +311,119 @@ const GROUPS = [
 ]},
 ];
 
+// ----- help texts (tooltips of TSDZ2_Configurator.java initComponents) ----
+// Rendered as small subscript lines under each field; also used as the
+// native title attribute. Field ids match the Swing component names.
+const HELP = {
+ TF_BOOST_TORQUE_FACTOR:'Max value 500\nRecommended range 200 to 300',
+ TF_MOTOR_ACC:'MAX VALUE\n36 volt motor, 36 volt battery = 35\n36 volt motor, 48 volt battery = 5\n36 volt motor, 52 volt battery = 0\n48 volt motor, 36 volt battery = 45\n48 volt motor, 48 volt battery = 35\n48 volt motor, 52 volt battery = 30',
+ TF_ASS_WITHOUT_PED_THRES:'Max value 100\nRecommended range 10 to 30',
+ TF_BOOST_CADENCE_STEP:'Max value 50\nRecommended range 20 to 30\n(high values short effect)',
+ TF_MOTOR_DEC:'Max value 100\nRecommended range 0 to 50',
+ CB_STARTUP_BOOST_ON_START:'Used only in Power assist mode',
+ CB_STARTUP_ASSIST_ENABLED:'Not available with coaster brake enabled',
+ CB_SMOOTH_START_ENABLED:'Used in Torque and Hybrid assist mode (disableable)\nUsed in Cadence assist mode (cannot be disabled)',
+ TF_SMOOTH_START_RAMP:'Max value 100\nRecommended range 0 to 50',
+ TF_OVERCURRENT_DELAY:'Value from 1 (25ms) to 5 (125ms)\nRecommended 2\nSet to 0, overcurrent error disabled',
+ TF_BATT_POW_MAX:'Motor power limit in offroad mode\nMax value depends on the rated\nmotor power and the battery capacity',
+ TF_BATT_CAPACITY:'To calculate\nBattery Volt x Ah',
+ TF_BAT_CUR_MAX:'Max value\n16 A for TSDZ2 36 V\n12 A for TSDZ2 48 V\n23 A for TSDZ8',
+ TF_BATT_NUM_CELLS:'7 for 24 V battery\n10 for 36 V battery\n13 for 48 V battery\n14 for 52 V battery',
+ TF_BATT_VOLT_CAL:'For calibrate voltage displayed\nIndicative value 95 to 105',
+ TF_BATT_CAPACITY_CAL:'Starting to 100%\nwith the % remaining when battery is low\ncalculate the actual%',
+ TF_BATT_VOLT_CUT_OFF:'Indicative value 29 for 36 V\n38 for 48 V, 41 for 52 V\nIt depends on the\ncharacteristics of the battery',
+ TF_BATT_PACK_RESISTANCE:'Default value 200 m\u03A9, valid for a 36 Volt, 500/600 Wh, 18650 cell battery.\nThe resistance value should be between 100 and 300 m\u03A9, considering that:\n- with higher voltages, the resistance increases.\n- with a greater number of parallels (higher capacity), the resistance decreases.\n- resistance increases as the battery ages (number of charges).\n- with 21700 cells, resistance is lower.\n- the type of cells can also have a significant impact.',
+ JCB_UNITS_TYPE:'For alternative mph, set km/h on display',
+ CB_TORQUE_CALIBRATION:'Enable after calibration',
+ TF_TORQ_ADC_OFFSET_ADJ:'Value -20 to 14\nDefault 0',
+ TF_TORQ_ADC_RANGE_ADJ:'Value -20 to 20\nDefault 0',
+ TF_TORQ_PER_ADC_STEP:'Default value 67\nOptional calibration',
+ TF_TORQUE_ADC_MAX:'Insert value read on calibration\nMax 500 for TSDZ2, 650 for TSDZ8',
+ TF_TORQ_ADC_OFFSET:'Insert value read on calibration\nMax 250',
+ TF_TORQ_PER_ADC_STEP_ADV:'Default value 34\nOptional calibration',
+ TF_TORQ_ADC_ANGLE_ADJ:'Value -20 to 20\nDefault 0',
+ TF_WHEEL_CIRCUMF:'Indicative values:\n26-inch wheel = 2050 mm\n27-inch wheel = 2150 mm\n27.5 inch wheel = 2215 mm\n28-inch wheel = 2250 mm\n29-inch wheel = 2300 mm',
+ TF_MAX_SPEED:'km/h or mph\nMax value in EU 25 km/h',
+ CB_STARTUP_ASSIST_SPEED_LIMIT_ENABLED:'When enabled, Startup assist uses\nthe same speed limit as set for Walk assist.',
+ TF_POWER_ASS_1:'% Human power\nMax value 500',
+ TF_POWER_ASS_2:'% Human power\nMax value 500',
+ TF_POWER_ASS_3:'% Human power\nMax value 500',
+ TF_POWER_ASS_4:'% Human power\nMax value 500',
+ TF_TORQUE_ASS_1:'Max value 254',
+ TF_TORQUE_ASS_2:'Max value 254',
+ TF_TORQUE_ASS_3:'Max value 254',
+ TF_TORQUE_ASS_4:'Max value 254',
+ TF_CADENCE_ASS_1:'Max value 254',
+ TF_CADENCE_ASS_2:'Max value 254',
+ TF_CADENCE_ASS_3:'Max value 254',
+ TF_CADENCE_ASS_4:'Max value 254',
+ TF_EMTB_ASS_1:'Value\nbetween 21 to 254',
+ TF_EMTB_ASS_2:'Value\nbetween 21 to 254',
+ TF_EMTB_ASS_3:'Value\nbetween 21 to 254',
+ TF_EMTB_ASS_4:'Value\nbetween 21 to 254',
+ TF_WALK_ASS_SPEED_1:'km/h x10 or mph x10\nValue 35 to 50 (3.5 to 5.0 km/h)',
+ TF_WALK_ASS_SPEED_2:'km/h x10 or mph x10\nValue 35 to 50 (3.5 to 5.0 km/h)',
+ TF_WALK_ASS_SPEED_3:'km/h x10 or mph x10\nValue 35 to 50 (3.5 to 5.0 km/h)',
+ TF_WALK_ASS_SPEED_4:'km/h x10 or mph x10\nValue 35 to 50 (3.5 to 5.0 km/h)',
+ TF_WALK_ASS_SPEED_LIMIT:'km/h x10 or mph x10\nMax value 60 (in EU 6 km/h)',
+ TF_WALK_ASS_TIME:'Max value 255 (0.1 s)',
+ CB_WALK_TIME_ENA:'Only with brake sensors enabled and offroad mode',
+ CB_WALK_ASSIST_ENABLED:'Not available with coaster brake enabled',
+ TF_CRUISE_ASS_1:'km/h or mph\nMax value in EU 25 km/h',
+ TF_CRUISE_ASS_2:'km/h or mph\nMax value in EU 25 km/h',
+ TF_CRUISE_ASS_3:'km/h or mph\nMax value in EU 25 km/h',
+ TF_CRUISE_ASS_4:'km/h or mph\nMax value in EU 25 km/h',
+ TF_CRUISE_SPEED_ENA:'Min speed to enable cruise (km/h or mph)',
+ CB_CRUISE_WHITOUT_PEDALING:'Only with brake sensors enabled',
+ TF_LIGHT_MODE_ON_START:'With lights button ON\n0 - lights ON\n1 - lights FLASHING\n2 - lights ON and BRAKE-FLASHING when braking\n3 - lights FLASHING and ON when braking\n4 - lights FLASHING and BRAKE-FLASHING when braking\n5 - lights ON and ON when braking, even with the light button OFF\n6 - lights ON and BRAKE-FLASHING when braking, even with the light button OFF\n7 - lights FLASHING and ON when braking, even with the light button OFF\n8 - lights FLASHING and BRAKE-FLASHING when braking, even with the light button OFF',
+ TF_LIGHT_MODE_1:'With lights button ON\n0 - lights ON\n1 - lights FLASHING\n2 - lights ON and BRAKE-FLASHING when braking\n3 - lights FLASHING and ON when braking\n4 - lights FLASHING and BRAKE-FLASHING when braking\n5 - lights ON and ON when braking, even with the light button OFF\n6 - lights ON and BRAKE-FLASHING when braking, even with the light button OFF\n7 - lights FLASHING and ON when braking, even with the light button OFF\n8 - lights FLASHING and BRAKE-FLASHING when braking, even with the light button OFF\nor alternative option settings\n11 - startup assist',
+ TF_LIGHT_MODE_2:'With lights button ON\n0 - lights ON\n1 - lights FLASHING\n2 - lights ON and BRAKE-FLASHING when braking\n3 - lights FLASHING and ON when braking\n4 - lights FLASHING and BRAKE-FLASHING when braking\n5 - lights ON and ON when braking, even with the light button OFF\n6 - lights ON and BRAKE-FLASHING when braking, even with the light button OFF\n7 - lights FLASHING and ON when braking, even with the light button OFF\n8 - lights FLASHING and BRAKE-FLASHING when braking, even with the light button OFF\nor alternative option settings\n9 - assistance without pedal rotation',
+ TF_LIGHT_MODE_3:'With lights button ON\n0 - lights ON\n1 - lights FLASHING\n2 - lights ON and BRAKE-FLASHING when braking\n3 - lights FLASHING and ON when braking\n4 - lights FLASHING and BRAKE-FLASHING when braking\n5 - lights ON and ON when braking, even with the light button OFF\n6 - lights ON and BRAKE-FLASHING when braking, even with the light button OFF\n7 - lights FLASHING and ON when braking, even with the light button OFF\n8 - lights FLASHING and BRAKE-FLASHING when braking, even with the light button OFF\nor alternative option settings\n10 - assistance with sensors error',
+ TF_STREET_SPEED_LIM:'km/h or mph\nMax value in EU 25 km/h',
+ TF_STREET_POWER_LIM:'Max nominal value in EU 250 W\nMax peak value approx. 500 W',
+ JCB_THROTTLE_MODE_STREET:'Only with brake sensors enabled\nThrottle mode must be at the same or higher level',
+ JCB_ASSIST_LEVEL_5_MODE:'Assist level 5\nDISABLED, if not available\nBEFORE ECO, if the fifth level is before ECO\nAFTER TURBO, if the fifth level is after TURBO',
+ TF_ASS_LEVELS_5_PERCENT:'Assist level 5\nIf assist level 5 mode is before ECO, must be less than 100%\npercentage of assistance level of ECO\nIf assist level 5 mode is after TURBO, must be greater than 100%\npercentage of assistance level of TURBO',
+ TF_TORQUE_MODES_REF_VOLT:'% Human power\nMax value 500',
+ TF_BAT_CELL_FULL:'Value 3.90 to 4.00',
+ TF_BAT_CELL_OVER:'Value 4.25 to 4.35',
+ TF_BAT_CELL_SOC:'Value 4.00 to 4.10',
+ TF_BAT_CELL_3_4:'Value empty to full',
+ TF_BAT_CELL_2_4:'Value empty to full',
+ TF_BAT_CELL_1_4:'Value empty to full',
+ TF_BAT_CELL_5_6:'Value empty to full',
+ TF_BAT_CELL_4_6:'Value empty to full',
+ TF_BAT_CELL_3_6:'Value empty to full',
+ TF_BAT_CELL_2_6:'Value empty to full',
+ TF_BAT_CELL_1_6:'Value empty to full',
+ TF_BAT_CELL_EMPTY:'Indicative value 2.90\nIt depends on the\ncharacteristics of the cells',
+ TF_DELAY_DATA_1:'Max value 255 (0.1 sec)\ncontinuous display at zero value',
+ TF_DATA_1:'0 - motor temperature (\u00B0C)\n1 - battery SOC remaining (%)\n2 - battery voltage filtered (V)\n3 - battery current (A)\n4 - motor power (Watt/10)\n5 - adc throttle (8 bit)\n6 - adc torque sensor (10 bit)\n7 - pedal cadence (rpm)\n8 - human power(W/10)\n9 - pedal torque adc delta\n10 - consumed Wh/10\n11 - motor ERPS\n12 - duty cycle PWM %\n13 - battery voltage not filtered (V)',
+ TF_DATA_2:'0 - motor temperature (\u00B0C)\n1 - battery SOC remaining (%)\n2 - battery voltage filtered (V)\n3 - battery current (A)\n4 - motor power (Watt/10)\n5 - adc throttle (8 bit)\n6 - adc torque sensor (10 bit)\n7 - pedal cadence (rpm)\n8 - human power(W/10)\n9 - pedal torque adc delta\n10 - consumed Wh/10\n11 - motor ERPS\n12 - duty cycle PWM %\n13 - battery voltage not filtered (V)',
+ TF_DATA_3:'0 - motor temperature (\u00B0C)\n1 - battery SOC remaining (%)\n2 - battery voltage filtered (V)\n3 - battery current (A)\n4 - motor power (Watt/10)\n5 - adc throttle (8 bit)\n6 - adc torque sensor (10 bit)\n7 - pedal cadence (rpm)\n8 - human power(W/10)\n9 - pedal torque adc delta\n10 - consumed Wh/10\n11 - motor ERPS\n12 - duty cycle PWM %\n13 - battery voltage not filtered (V)',
+ TF_DATA_4:'0 - motor temperature (\u00B0C)\n1 - battery SOC remaining (%)\n2 - battery voltage filtered (V)\n3 - battery current (A)\n4 - motor power (Watt/10)\n5 - adc throttle (8 bit)\n6 - adc torque sensor (10 bit)\n7 - pedal cadence (rpm)\n8 - human power(W/10)\n9 - pedal torque adc delta\n10 - consumed Wh/10\n11 - motor ERPS\n12 - duty cycle PWM %\n13 - battery voltage not filtered (V)',
+ TF_DATA_5:'0 - motor temperature (\u00B0C)\n1 - battery SOC remaining (%)\n2 - battery voltage filtered (V)\n3 - battery current (A)\n4 - motor power (Watt/10)\n5 - adc throttle (8 bit)\n6 - adc torque sensor (10 bit)\n7 - pedal cadence (rpm)\n8 - human power(W/10)\n9 - pedal torque adc delta\n10 - consumed Wh/10\n11 - motor ERPS\n12 - duty cycle PWM %\n13 - battery voltage not filtered (V)',
+ TF_DATA_6:'0 - motor temperature (\u00B0C)\n1 - battery SOC remaining (%)\n2 - battery voltage filtered (V)\n3 - battery current (A)\n4 - motor power (Watt/10)\n5 - adc throttle (8 bit)\n6 - adc torque sensor (10 bit)\n7 - pedal cadence (rpm)\n8 - human power(W/10)\n9 - pedal torque adc delta\n10 - consumed Wh/10\n11 - motor ERPS\n12 - duty cycle PWM %\n13 - battery voltage not filtered (V)',
+ TF_DELAY_DATA_2:'Max value 255 (0.1 sec)\ncontinuous display at zero value',
+ TF_DELAY_DATA_3:'Max value 255 (0.1 sec)\ncontinuous display at zero value',
+ TF_DELAY_DATA_4:'Max value 255 (0.1 sec)\ncontinuous display at zero value',
+ TF_DELAY_DATA_5:'Max value 255 (0.1 sec)\ncontinuous display at zero value',
+ TF_DELAY_DATA_6:'Max value 255 (0.1 sec)\ncontinuous display at zero value',
+ TF_ADC_THROTTLE_MIN:'Value 40 to 50',
+ TF_ADC_THROTTLE_MAX:'Value 170 to 180',
+ TF_TEMP_MIN_LIM:'Max value 75 (\u00B0C)',
+ TF_TEMP_MAX_LIM:'Max value 85 (\u00B0C)',
+ TF_DELAY_MENU:'Max value 60 (0.1 s)',
+ TF_NUM_DATA_AUTO_DISPLAY:'Value 1 to 6',
+ TF_COASTER_BRAKE_THRESHOLD:'Value 5 to 40 (s)\nRecommended 15\n(high values short effect)',
+ JCB_THROTTLE_MODE:'Only with brake sensors enabled\nSet Optional ADC to Throttle',
+ TF_MOTOR_BLOCK_ERPS:'Value 10 to 30 (ERPS)',
+ TF_MOTOR_BLOCK_CURR:'Value 1 to 5 (0.1 A)',
+ TF_MOTOR_BLOCK_TIME:'Value 1 to 10 (0.1 s)',
+ TF_ASSIST_THROTTLE_MIN:'Value 0 to 100',
+ TF_ASSIST_THROTTLE_MAX:'Value MIN to 255',
+};
+
 // ----- state ---------------------------------------------------------------
 const S = {};        // field values: text -> string, check -> bool, combo -> index, radio group -> radio id
 let intMaxSpeed=25, intStreetSpeed=25;
@@ -343,34 +460,60 @@ const throttleOk = () => ADC() === THROTTLE && brakeOk();
 // ----- DOM ----------------------------------------------------------------
 const el = (id) => document.getElementById(id);
 
+// Java-app tooltip rendered as a small subscript line under the row; texts
+// longer than 3 lines are clamped to two lines with a more/less toggle.
+function helpDiv(id, prefix) {
+  const t = HELP[id];
+  if (!t) return null;
+  const d = document.createElement('div');
+  d.className = 'help';
+  const tx = document.createElement('span'); tx.className = 'txt';
+  tx.textContent = (prefix ? prefix + ': ' : '') + t;
+  d.append(tx);
+  if (t.split('\n').length > 3) {
+    d.classList.add('clamped');
+    const more = document.createElement('span'); more.className = 'more'; more.textContent = 'more';
+    more.addEventListener('click', () => {
+      const clamped = d.classList.toggle('clamped');
+      more.textContent = clamped ? 'more' : 'less';
+    });
+    d.append(more);
+  }
+  return d;
+}
+
 function buildRow(f) {
   const row = document.createElement('div');
   row.className = 'row';
   if (f.t === 'text') {
     const lb = document.createElement('label'); lb.htmlFor = f.id; lb.textContent = f.l; lb.id = 'lb_' + f.id;
     const inp = document.createElement('input'); inp.type = 'text'; inp.id = f.id;
+    if (HELP[f.id]) inp.title = HELP[f.id];
     row.append(lb, inp);
     if (f.inline) {
       const g = f.inline;
       if (g.t === 'check') {
         const w = document.createElement('span'); w.className = 'chk';
         const cb = document.createElement('input'); cb.type = 'checkbox'; cb.id = g.id;
+        if (HELP[g.id]) cb.title = HELP[g.id];
         const cl = document.createElement('label'); cl.htmlFor = g.id; cl.textContent = g.l;
         w.append(cb, cl); row.append(w);
       } else {
         const gl = document.createElement('label'); gl.htmlFor = g.id; gl.textContent = g.l;
         const gi = document.createElement('input'); gi.type = 'text'; gi.id = g.id;
+        if (HELP[g.id]) gi.title = HELP[g.id];
         row.append(gl, gi);
       }
     }
   } else if (f.t === 'check') {
     const w = document.createElement('span'); w.className = 'chk';
     const cb = document.createElement('input'); cb.type = 'checkbox'; cb.id = f.id;
+    if (HELP[f.id]) cb.title = HELP[f.id];
     const cl = document.createElement('label'); cl.htmlFor = f.id; cl.textContent = f.l;
     w.append(cb, cl); row.append(w);
     if (f.extra) {
       const el2 = document.createElement('input'); el2.type = 'text'; el2.id = f.extra.id;
-      el2.title = f.extra.label || '';
+      el2.title = HELP[f.extra.id] || f.extra.label || '';
       const lb2 = document.createElement('span'); lb2.className = 'unit'; lb2.textContent = f.extra.label || '';
       if (f.extra.label) row.append(lb2);
       row.append(el2);
@@ -378,11 +521,13 @@ function buildRow(f) {
   } else if (f.t === 'combo') {
     const lb = document.createElement('label'); lb.htmlFor = f.id; lb.textContent = f.l;
     const sel = document.createElement('select'); sel.id = f.id;
+    if (HELP[f.id]) sel.title = HELP[f.id];
     f.opts.forEach((o, i) => { const op = document.createElement('option'); op.value = i; op.textContent = o; sel.append(op); });
     row.append(lb, sel);
     if (f.extra) {
       const lb2 = document.createElement('label'); lb2.htmlFor = f.extra.id; lb2.textContent = f.extra.label;
       const el2 = document.createElement('input'); el2.type = 'text'; el2.id = f.extra.id;
+      el2.title = HELP[f.extra.id] || '';
       row.append(lb2, el2);
     }
   } else if (f.t === 'radio') {
@@ -395,6 +540,9 @@ function buildRow(f) {
       row.append(rb, rl);
     });
   }
+  const hd = helpDiv(f.id); if (hd) row.append(hd);
+  const sub = f.extra || f.inline;
+  if (sub) { const hs = helpDiv(sub.id, sub.l || sub.label); if (hs) row.append(hs); }
   return row;
 }
 

@@ -55,3 +55,8 @@ The `.ini` and `config.h` output are byte-compatible with the Java configurator
 (field ids in the source are the original Swing variable names). Integer math
 (truncating division, `(int)(float*100)`) mirrors Java semantics so generated
 files are identical for identical inputs.
+
+The help texts of the Java app (`setToolTipText` in `TSDZ2_Configurator.java`)
+are shown in the web UI as small subscript lines under each field (long texts
+are clamped to two lines with a *more/less* toggle) and are also attached as
+native hover tooltips on the inputs.
