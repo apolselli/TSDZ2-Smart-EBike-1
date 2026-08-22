@@ -22,9 +22,9 @@ Requirements for compilation only: `sdcc` (STM8 target) and `make` in PATH.
 
 ## Compile flow
 
-1. Click **Compile firmware** - the page generates the `.ini` + `config.h`,
-   saves a timestamped copy of the settings into the browser's experimental list,
-   and POSTs them to the server, which assigns a build GUID.
+1. Click **Compile firmware** (top right) - the page generates the `.ini` +
+   `config.h`, remembers the current settings for the next page load, and
+   POSTs them to the server, which assigns a build GUID.
 2. You are redirected to a waiting page (`/compile/<guid>`) that shows the live
    build log and your position in the queue (builds run one at a time).
 3. When the build finishes, download `TSDZ2-<version>-<settings>.hex`,
@@ -35,12 +35,11 @@ With motor type **TSDZ8** selected, no server build happens: the button generate
 
 ## Settings files
 
-- The repository defaults (`proven settings/*.ini`) are listed under
-  *Proven Settings* (read-only, served by the local server).
-- Your own saves live in the browser (localStorage) in the same
-  experimental/proven structure, with the *Copy from Experimental to Proven*
-  button working like the Java app.
-- *Import .ini* / *Export .ini* move files between disk and the browser.
+- The toolbar's three **defaults** buttons load the repository defaults
+  (`proven settings/*.ini`) for each motor type (TSDZ2 48 V / 36 V, TSDZ8).
+- *Import .ini* / *Export .ini* move files between disk and the editor.
+- The current settings are remembered in the browser (localStorage) and
+  restored on the next page load.
 
 ## Build artifacts
 

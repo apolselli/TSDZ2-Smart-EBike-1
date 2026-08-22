@@ -9,12 +9,12 @@
  *{box-sizing:border-box}
  body{font-family:Tahoma,Verdana,Segoe UI,sans-serif;font-size:13px;background:var(--bg);margin:0;color:#1d2733}
  .banner{background:var(--head);color:#fff;padding:8px 14px;font-weight:bold;font-size:15px}
- .layout{display:flex;gap:14px;padding:14px;align-items:flex-start;flex-wrap:wrap}
- .left{flex:1 1 640px;min-width:600px}
- .sidebar{flex:0 0 270px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px;display:flex;flex-direction:column;gap:6px}
- .sidebar h3{margin:2px 0;font-size:12px;color:#5a6673}
- .verline{font-size:12px;color:#5a6673;word-break:break-all}
- select.list{width:100%;height:120px;font-size:12px}
+ .layout{padding:14px}
+ .left{max-width:1500px;margin:0 auto}
+ .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--line)}
+ .toolbar .btn{height:34px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;font-size:13px}
+ .toolbar .btn.primary{padding:0 16px}
+ .toolbar .tsep{width:1px;align-self:stretch;background:var(--line);margin:0 4px}
  .tabs{display:flex;gap:2px;margin-bottom:0}
  .tabs button{padding:7px 16px;border:1px solid var(--line);border-bottom:none;background:#e7ecf2;cursor:pointer;font:inherit;border-radius:6px 6px 0 0}
  .tabs button.active{background:var(--panel);font-weight:bold}
@@ -47,7 +47,6 @@
  .toast{background:#24303f;color:#fff;padding:9px 13px;border-radius:6px;max-width:340px;box-shadow:0 3px 10px rgba(0,0,0,.3)}
  .toast.error{background:#8c2f39}
  .unit{color:#5a6673;font-size:11px}
- .hint{color:#5a6673;font-size:11px;margin-top:6px}
  .adv-cols{display:flex;gap:12px;flex-wrap:wrap}
  .adv-cols .col{flex:1 1 200px;min-width:190px}
  .adv-cols .col h4{margin:4px 0;font-size:12px;color:#5a6673}
@@ -55,6 +54,18 @@
 </head>
 <body>
 <div class="banner">TSDZ2/8 Parameter Configurator &mdash; web edition</div>
+
+<div class="toolbar">
+  <button class="btn" id="BTN_DEF_48V" title="Load the repository default settings for a TSDZ2 motor with a 48 V battery">TSDZ2 48V defaults</button>
+  <button class="btn" id="BTN_DEF_36V" title="Load the repository default settings for a TSDZ2 motor with a 36 V battery">TSDZ2 36V defaults</button>
+  <button class="btn" id="BTN_DEF_TSDZ8" title="Load the repository default settings for a TSDZ8 motor">TSDZ8 defaults</button>
+  <span class="tsep"></span>
+  <button class="btn small" id="BTN_IMPORT" title="Load a .ini file from disk into the editor">Import .ini</button>
+  <button class="btn small" id="BTN_EXPORT" title="Save the current settings as a .ini file">Export .ini</button>
+  <span class="tsep"></span>
+  <button class="btn primary" id="BTN_COMPILE">Compile firmware</button>
+  <input type="file" id="fileIni" accept=".ini,text/plain" class="hidden">
+</div>
 
 <div class="layout">
   <div class="left">
@@ -68,26 +79,6 @@
       <div class="pane" id="pane1"></div>
       <div class="pane" id="pane2"></div>
     </div>
-  </div>
-
-  <div class="sidebar">
-    <div class="verline" id="LB_VERSION">Version</div>
-    <div class="verline" id="LB_LAST_COMMIT">Last commit</div>
-    <hr>
-    <h3>Experimental Settings</h3>
-    <select class="list" id="expSet" size="8"></select>
-    <button class="btn" id="BTN_COPY_FILE_INI">Copy from Experimental to Proven</button>
-    <h3>Proven Settings</h3>
-    <select class="list" id="provSet" size="7"></select>
-    <div style="display:flex;gap:6px">
-      <button class="btn small" id="BTN_IMPORT" title="Load a .ini file from disk into the editor">Import .ini</button>
-      <button class="btn small" id="BTN_EXPORT" title="Save the current settings as a .ini file">Export .ini</button>
-    </div>
-    <input type="file" id="fileIni" accept=".ini,text/plain" class="hidden">
-    <hr>
-    <button class="btn primary" id="BTN_COMPILE">Compile firmware</button>
-    <div class="hint">Compilation runs on the local server (sdcc + make).<br>
-      Flashing is out of scope: use stm8flash / compile_and_flash_20.sh yourself.</div>
   </div>
 </div>
 
@@ -432,7 +423,6 @@ let intCruiseSpeed1=15, intCruiseSpeed2=18, intCruiseSpeed3=21, intCruiseSpeed4=
 let intTorqueAdcStep=67;
 let intTorqueOffsetAdj=MIDDLE_OFFSET_ADJ, intTorqueRangeAdj=MIDDLE_RANGE_ADJ, intTorqueAngleAdj=MIDDLE_ANGLE_ADJ;
 let intThrottleMode=DISABLED, intThrottleModeOnStreetMode=DISABLED, intAssistLevel5=DISABLED;
-let strLastCommit = '';
 
 // radio group membership: radio id -> group field id, group id -> member radio ids
 const RADIO_GROUP = {};
@@ -748,13 +738,9 @@ function brakeFeatureChanged() {
 function motorTypeChanged() {
   if (MOTOR() === TSDZ8) {
     el('BTN_COMPILE').textContent = 'Compile HEX file';
-    el('LB_VERSION').textContent = 'Version (mstrens)';
-    el('LB_LAST_COMMIT').textContent = `Maim ${TSDZ8_HEADER[0]} - Sub ${TSDZ8_HEADER[1]}`;
     el('BTN_COMPILE').disabled = !boolTSDZ8headerRead;
   } else {
     el('BTN_COMPILE').textContent = 'Compile firmware';
-    el('LB_VERSION').textContent = 'Version (last commits)';
-    el('LB_LAST_COMMIT').textContent = strLastCommit || 'Last commit';
     el('BTN_COMPILE').disabled = false;
   }
   applyEnableRules();
@@ -1069,7 +1055,10 @@ function loadIni(text, name) {
     applyLoadedFixups(null);
   }
   if (corrupt) toast('Corrupt .ini file or invalid data', true);
-  if (name) { currentName = name; }
+  else {
+    if (name) currentName = name;
+    lsSet(LS_LAST, { name: currentName || timestampName() + '.ini', ini: text });
+  }
   applyEnableRules();
   applyDynamicLabels();
 }
@@ -1518,12 +1507,14 @@ function generateTsdz8Hex() {
 }
 
 // ----- settings library (localStorage) --------------------------------------
-const LS_EXP = 'tsdz2web.experimental', LS_PROV = 'tsdz2web.proven', LS_LAST = 'tsdz2web.last';
+const LS_LAST = 'tsdz2web.last';
 let currentName = '';
 let defaultsFiles = []; // [{name, ini}] from the server
 
 const lsGet = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
 const lsSet = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+// drop the experimental/proven lists of older versions of this page
+['tsdz2web.experimental', 'tsdz2web.proven'].forEach(k => localStorage.removeItem(k));
 
 function timestampName() {
   const d = new Date();
@@ -1534,36 +1525,11 @@ function timestampName() {
   return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}${tz}`;
 }
 
-function renderLists() {
-  const exp = lsGet(LS_EXP, []);
-  const expSel = el('expSet');
-  expSel.innerHTML = '';
-  exp.forEach(f => { const o = document.createElement('option'); o.textContent = f.name; o._ini = f.ini; expSel.append(o); });
-
-  const provSel = el('provSet');
-  provSel.innerHTML = '';
-  const g1 = document.createElement('optgroup'); g1.label = 'Defaults (repository)';
-  defaultsFiles.forEach(f => { const o = document.createElement('option'); o.textContent = f.name; o._ini = f.ini; g1.append(o); });
-  const g2 = document.createElement('optgroup'); g2.label = 'Proven (this browser)';
-  lsGet(LS_PROV, []).forEach(f => { const o = document.createElement('option'); o.textContent = f.name; o._ini = f.ini; g2.append(o); });
-  provSel.append(g1, g2);
-}
-
-function saveExperimentalCopy() {
-  const { ini } = generateOutputs();
-  const name = timestampName() + '.ini';
-  const exp = lsGet(LS_EXP, []);
-  exp.unshift({ name, ini });
-  lsSet(LS_EXP, exp.slice(0, 50));
-  renderLists();
-  return name;
-}
-
 // ----- compile --------------------------------------------------------------
 async function compile() {
   const { ini, configH } = generateOutputs();
-  const name = saveExperimentalCopy();
-  lsSet(LS_LAST, { source: 'exp', name });
+  const name = currentName || timestampName() + '.ini';
+  lsSet(LS_LAST, { name, ini });
 
   if (MOTOR() === TSDZ8) {
     downloadFile('TSDZ8_config.hex', generateTsdz8Hex());
@@ -1628,28 +1594,14 @@ function wire() {
     });
   }));
 
-  el('expSet').addEventListener('change', (e) => {
-    const o = e.target.selectedOptions[0];
-    if (o && o._ini) { loadIni(o._ini, o.textContent); lsSet(LS_LAST, { source: 'exp', name: o.textContent }); }
-  });
-  el('provSet').addEventListener('change', (e) => {
-    const o = e.target.selectedOptions[0];
-    if (o && o._ini) { loadIni(o._ini, o.textContent); lsSet(LS_LAST, { source: 'prov', name: o.textContent }); }
-  });
-
-  el('BTN_COPY_FILE_INI').addEventListener('click', () => {
-    const o = el('expSet').selectedOptions[0];
-    if (!o) { toast('Select a file in Experimental Settings first', true); return; }
-    const suggested = el('provSet').selectedOptions[0]?.textContent || 'My_settings.ini';
-    let name = prompt('New file name (.ini)', suggested);
-    if (!name) return;
-    if (!(name.length > 4 && name.slice(-4).toLowerCase() === '.ini')) name += '.ini';
-    const prov = lsGet(LS_PROV, []);
-    if (prov.some(f => f.name === name) || defaultsFiles.some(f => f.name === name)) {
-      if (!confirm(name + ' file already exists, overwrite?')) return;
-    }
-    lsSet(LS_PROV, [{ name, ini: o._ini }, ...prov.filter(f => f.name !== name)]);
-    renderLists();
+  // toolbar: load the repository defaults for each motor type
+  [['BTN_DEF_48V', /48V/i], ['BTN_DEF_36V', /36V/i], ['BTN_DEF_TSDZ8', /TSDZ8/i]].forEach(([id, re]) => {
+    el(id).addEventListener('click', () => {
+      const f = defaultsFiles.find(x => re.test(x.name));
+      if (!f) { toast('Default settings could not be loaded from the server', true); return; }
+      loadIni(f.ini, f.name);
+      toast('Loaded ' + f.name);
+    });
   });
 
   el('BTN_IMPORT').addEventListener('click', () => el('fileIni').click());
@@ -1671,31 +1623,19 @@ function wire() {
 async function init() {
   buildUI();
   wire();
-  renderLists();
-
-  try {
-    const v = await (await fetch('/api/version')).json();
-    strLastCommit = v.version || '';
-    if (MOTOR() !== TSDZ8) el('LB_LAST_COMMIT').textContent = strLastCommit || 'Last commit';
-  } catch { /* offline defaults */ }
 
   try {
     const d = await (await fetch('/api/defaults')).json();
     defaultsFiles = d.files || [];
-    renderLists();
   } catch {
     toast('Could not load default settings from the server', true);
   }
 
-  // auto-load last settings (mirrors Java lastSettingsFile), else 48V default
+  // restore last settings (mirrors Java lastSettingsFile), else 48V default
   const last = lsGet(LS_LAST, null);
-  let loaded = false;
-  if (last) {
-    const pool = last.source === 'prov' ? [...defaultsFiles, ...lsGet(LS_PROV, [])] : lsGet(LS_EXP, []);
-    const hit = pool.find(f => f.name === last.name);
-    if (hit) { loadIni(hit.ini, hit.name); loaded = true; }
-  }
-  if (!loaded) {
+  if (last && typeof last.ini === 'string') {
+    loadIni(last.ini, last.name || 'settings.ini');
+  } else {
     const def = defaultsFiles.find(f => /48V/i.test(f.name)) || defaultsFiles[0];
     if (def) loadIni(def.ini, def.name);
   }

@@ -345,9 +345,7 @@ function waitingPage(guid) {
  .meta{color:#555;font-size:.9rem;margin-bottom:1rem}
  .status{font-weight:bold;padding:.4rem .8rem;border-radius:4px;display:inline-block;margin-bottom:1rem}
  .queued{background:#fff3cd}.running{background:#cfe2ff}.done{background:#d1e7dd}.error{background:#f8d7da}
- pre{background:#101418;color:#cfe3ff;padding:1rem;border-radius:6px;overflow:auto;max-height:24rem;font-size:.8rem;white-space:pre-wrap}
- a.btn,span.dim{display:inline-block;margin:.3rem .6rem .3rem 0;padding:.5rem 1rem;background:#0d6efd;color:#fff;text-decoration:none;border-radius:6px}
- span.dim{background:#6c757d}
+ a.btn{display:inline-block;margin:.3rem .6rem .3rem 0;padding:.5rem 1rem;background:#0d6efd;color:#fff;text-decoration:none;border-radius:6px}
  .spin{display:inline-block;animation:r 1s linear infinite}
  @keyframes r{to{transform:rotate(360deg)}}
 </style></head><body>
@@ -356,17 +354,14 @@ function waitingPage(guid) {
  <div class="meta">Build <code>${guid}</code> &middot; <a href="/">back to configurator</a></div>
  <div id="status" class="status queued">queued</div><span id="spin" class="spin">&#9696;</span>
  <div id="queuepos"></div>
- <pre id="log">waiting for build output...</pre>
  <div id="links"></div>
 </div>
 <script>
 const guid = location.pathname.split('/').pop();
 const statusEl = document.getElementById('status');
-const logEl = document.getElementById('log');
 const linksEl = document.getElementById('links');
 const spinEl = document.getElementById('spin');
 const queueEl = document.getElementById('queuepos');
-let last = '';
 async function poll() {
   try {
     const r = await fetch('/api/compile/' + guid);
@@ -375,14 +370,12 @@ async function poll() {
     statusEl.className = 'status ' + j.status;
     queueEl.textContent = (j.status === 'queued' && j.position > 0)
       ? 'position in queue: ' + j.position : '';
-    if (j.logTail) { logEl.textContent = j.logTail; logEl.scrollTop = logEl.scrollHeight; }
     if (j.status === 'done') {
       spinEl.style.display = 'none';
       linksEl.innerHTML = '<a class="btn" href="/api/compile/' + guid + '/hex">Download firmware (' + (j.hexName || 'main.hex') + ')</a>'
         + '<a class="btn" href="/api/compile/' + guid + '/configh">config.h</a>'
         + '<a class="btn" href="/api/compile/' + guid + '/ini">settings.ini</a>'
-        + '<a class="btn" href="/api/compile/' + guid + '/log">build log</a>'
-        + '<span class="dim">flash it yourself with: stm8flash -c stlinkv2 -p stm8s105?6 -w &lt;hex&gt;</span>';
+        + '<a class="btn" href="/api/compile/' + guid + '/log">build log</a>';
       clearInterval(t);
     } else if (j.status === 'error') {
       spinEl.style.display = 'none';
