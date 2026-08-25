@@ -79,6 +79,29 @@ function safeName(name) {
   return s.length ? s : 'settings';
 }
 
+// config.h is compiled by sdcc: an #include with an absolute path, a ".."
+// segment, or a computed (macro) operand could pull host files into the build
+// and leak them through the downloadable build.log. Only plain relative
+// includes (firmware sibling headers) are allowed.
+function safeConfigH(text) {
+  // Mirror the preprocessor: trigraphs and backslash-newline continuations
+  // can disguise a directive from a naive line scan.
+  const norm = String(text)
+    .replace(/\r\n?/g, '\n')
+    .replace(/\?\?=/g, '#')
+    .replace(/\?\?\//g, '\\')
+    .replace(/\\\n/g, '');
+  const directive = /^[ \t]*#[ \t]*include[ \t]*(.+?)[ \t]*$/gm;
+  let m;
+  while ((m = directive.exec(norm))) {
+    const lit = m[1].match(/^("[^"\n]*"|<[^<>\n]*>)/);
+    if (!lit) return false;
+    const inc = lit[0].slice(1, -1);
+    if (/^[\\/]/.test(inc) || /^[A-Za-z]:/.test(inc) || inc.split(/[\\/]+/).includes('..')) return false;
+  }
+  return true;
+}
+
 const GUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 async function firmwareVersion() {
@@ -234,6 +257,10 @@ async function handleCompilePost(req, res) {
   const { name, ini, configH } = body;
   if (typeof configH !== 'string' || !configH.length || typeof ini !== 'string' || !ini.length) {
     sendJson(res, 400, { error: 'missing ini or configH' });
+    return;
+  }
+  if (!safeConfigH(configH)) {
+    sendJson(res, 400, { error: 'config.h contains an unsupported #include (only plain firmware-relative headers are allowed)' });
     return;
   }
 
