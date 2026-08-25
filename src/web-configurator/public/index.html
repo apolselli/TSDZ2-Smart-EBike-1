@@ -10,7 +10,7 @@
  body{font-family:Tahoma,Verdana,Segoe UI,sans-serif;font-size:13px;background:var(--bg);margin:0;color:#1d2733}
  .banner{background:var(--head);color:#fff;padding:8px 14px;font-weight:bold;font-size:15px}
  .layout{padding:14px}
- .left{max-width:1500px;margin:0 auto}
+ .left{max-width:600px;margin:0 auto}
  .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--line)}
  .toolbar .btn{height:34px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;font-size:13px}
  .toolbar .btn.primary{padding:0 16px}
@@ -26,10 +26,8 @@
  .group>h2{font-size:13px;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid var(--line)}
  .row{display:flex;align-items:center;gap:6px;margin:4px 0;min-height:26px;flex-wrap:wrap}
  .row label{flex:1 1 auto}
- .help{flex:1 1 100%;color:#5a6673;font-size:11px;line-height:14px;margin:0 0 3px}
+ .help{flex:1 1 100%;color:#5a6673;font-size:11px;line-height:14px;margin:0 0 3px;padding-left:10px}
  .help .txt{display:block;white-space:pre-line}
- .help.clamped .txt{max-height:28px;overflow:hidden}
- .help .more{color:var(--accent);cursor:pointer;white-space:nowrap;text-decoration:underline}
  .row input[type=text]{width:72px;text-align:right;padding:3px 5px;font:inherit;border:1px solid var(--line);border-radius:4px}
  .row input:disabled{background:#eef1f5;color:#8a94a1}
  .row select{padding:3px 5px;font:inherit;border:1px solid var(--line);border-radius:4px;background:#fff}
@@ -42,7 +40,6 @@
  .btn:hover{background:#dce4ee}
  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:bold;padding:12px 10px}
  .btn.primary:disabled{background:#9aa7b5;border-color:#9aa7b5;cursor:not-allowed}
- .btn.small{padding:4px 8px;font-size:12px}
  #toasts{position:fixed;bottom:14px;right:14px;display:flex;flex-direction:column;gap:6px;z-index:50}
  .toast{background:#24303f;color:#fff;padding:9px 13px;border-radius:6px;max-width:340px;box-shadow:0 3px 10px rgba(0,0,0,.3)}
  .toast.error{background:#8c2f39}
@@ -60,8 +57,8 @@
   <button class="btn" id="BTN_DEF_36V" title="Load the repository default settings for a TSDZ2 motor with a 36 V battery">TSDZ2 36V defaults</button>
   <button class="btn" id="BTN_DEF_TSDZ8" title="Load the repository default settings for a TSDZ8 motor">TSDZ8 defaults</button>
   <span class="tsep"></span>
-  <button class="btn small" id="BTN_IMPORT" title="Load a .ini file from disk into the editor">Import .ini</button>
-  <button class="btn small" id="BTN_EXPORT" title="Save the current settings as a .ini file">Export .ini</button>
+  <button class="btn" id="BTN_IMPORT" title="Load a .ini file from disk into the editor">Import .ini</button>
+  <button class="btn" id="BTN_EXPORT" title="Save the current settings as a .ini file">Export .ini</button>
   <span class="tsep"></span>
   <button class="btn primary" id="BTN_COMPILE">Compile firmware</button>
   <input type="file" id="fileIni" accept=".ini,text/plain" class="hidden">
@@ -302,112 +299,143 @@ const GROUPS = [
 ]},
 ];
 
-// ----- help texts (tooltips of TSDZ2_Configurator.java initComponents) ----
+// ----- help texts -----------------------------------------------------------
 // Rendered as small subscript lines under each field; also used as the
 // native title attribute. Field ids match the Swing component names.
+// Sources: TSDZ2_Configurator.java tooltips, the Parameter configurator
+// guide (manuals/EN-Parameter_configurator_guide-*.pdf) and the firmware
+// sources (src/*.c) for the behavior each text describes.
 const HELP = {
- TF_BOOST_TORQUE_FACTOR:'Max value 500\nRecommended range 200 to 300',
+ JCB_MOTOR_TYPE:'Motor type: TSDZ2 (TSDZ2B) 48 V or 36 V, or TSDZ8 (mstrens version).\nRead the motor plate data.\nCaution: this is the motor voltage rating,\nnot the battery voltage.',
+ TF_BATT_POW_MAX:'Motor power limit in offroad mode.\nKeep it below the maximum power the battery can deliver.\nThe current limit used is the lower of Battery current max and\nMotor power max / battery voltage.',
  TF_MOTOR_ACC:'MAX VALUE\n36 volt motor, 36 volt battery = 35\n36 volt motor, 48 volt battery = 5\n36 volt motor, 52 volt battery = 0\n48 volt motor, 36 volt battery = 45\n48 volt motor, 48 volt battery = 35\n48 volt motor, 52 volt battery = 30',
- TF_ASS_WITHOUT_PED_THRES:'Max value 100\nRecommended range 10 to 30',
- TF_BOOST_CADENCE_STEP:'Max value 50\nRecommended range 20 to 30\n(high values short effect)',
- TF_MOTOR_DEC:'Max value 100\nRecommended range 0 to 50',
- CB_STARTUP_BOOST_ON_START:'Used only in Power assist mode',
- CB_STARTUP_ASSIST_ENABLED:'Not available with coaster brake enabled',
- CB_SMOOTH_START_ENABLED:'Used in Torque and Hybrid assist mode (disableable)\nUsed in Cadence assist mode (cannot be disabled)',
- TF_SMOOTH_START_RAMP:'Max value 100\nRecommended range 0 to 50',
- TF_OVERCURRENT_DELAY:'Value from 1 (25ms) to 5 (125ms)\nRecommended 2\nSet to 0, overcurrent error disabled',
- TF_BATT_POW_MAX:'Motor power limit in offroad mode\nMax value depends on the rated\nmotor power and the battery capacity',
- TF_BATT_CAPACITY:'To calculate\nBattery Volt x Ah',
- TF_BAT_CUR_MAX:'Max value\n16 A for TSDZ2 36 V\n12 A for TSDZ2 48 V\n23 A for TSDZ8',
- TF_BATT_NUM_CELLS:'7 for 24 V battery\n10 for 36 V battery\n13 for 48 V battery\n14 for 52 V battery',
- TF_BATT_VOLT_CAL:'For calibrate voltage displayed\nIndicative value 95 to 105',
- TF_BATT_CAPACITY_CAL:'Starting to 100%\nwith the % remaining when battery is low\ncalculate the actual%',
- TF_BATT_VOLT_CUT_OFF:'Indicative value 29 for 36 V\n38 for 48 V, 41 for 52 V\nIt depends on the\ncharacteristics of the battery',
- TF_BATT_PACK_RESISTANCE:'Default value 200 m\u03A9, valid for a 36 Volt, 500/600 Wh, 18650 cell battery.\nThe resistance value should be between 100 and 300 m\u03A9, considering that:\n- with higher voltages, the resistance increases.\n- with a greater number of parallels (higher capacity), the resistance decreases.\n- resistance increases as the battery ages (number of charges).\n- with 21700 cells, resistance is lower.\n- the type of cells can also have a significant impact.',
- JCB_UNITS_TYPE:'For alternative mph, set km/h on display',
- CB_TORQUE_CALIBRATION:'Enable after calibration',
- TF_TORQ_ADC_OFFSET_ADJ:'Value -20 to 14\nDefault 0',
- TF_TORQ_ADC_RANGE_ADJ:'Value -20 to 20\nDefault 0',
- TF_TORQ_PER_ADC_STEP:'Default value 67\nOptional calibration',
- TF_TORQUE_ADC_MAX:'Insert value read on calibration\nMax 500 for TSDZ2, 650 for TSDZ8',
- TF_TORQ_ADC_OFFSET:'Insert value read on calibration\nMax 250',
- TF_TORQ_PER_ADC_STEP_ADV:'Default value 34\nOptional calibration',
- TF_TORQ_ADC_ANGLE_ADJ:'Value -20 to 20\nDefault 0',
+ TF_MOTOR_DEC:'Motor deceleration ramp:\n0 = maximum ramp (slowest stop),\n100 = minimum ramp (fastest stop).\nRecommended 25 to 45.',
+ TF_OVERCURRENT_DELAY:'Value from 1 (25ms) to 5 (125ms)\nRecommended 2\nSet to 0, overcurrent error disabled\nOvercurrent error prevents damage to the\ncontroller and the blue gear',
+ RB_PWM:'PWM frequency.\n18 kHz: maximum cadence 110 rpm, best performance.\n19 kHz: cadence up to almost 120 rpm, but about -1% efficiency.\nField weakening must be enabled\nto reach the maximum cadence.',
+ CB_FIELD_WEAKENING_ENABLED:'Increases the motor cadence (up to 120 rpm when possible)\nat the cost of some efficiency.\nAutomatically activated when the PWM value reaches 100%.',
+ CB_ASS_WITHOUT_PED:'Assistance starts by simply pushing on the pedals,\nwithout turning them.\nRecommended with brake sensors installed and enabled.\nThe push needed to start is set by the next parameter.\nDisabled (safety) when Pedal torque ADC offset adjustment is negative.\nCaution: together with Startup boost the effect increases,\nstressing the transmission.\nCan also be toggled from the display instead of Lights mode 2.',
+ TF_ASS_WITHOUT_PED_THRES:'Sensitivity of the start, as % of pedal thrust:\n100 = a minimum torque on the pedals is enough.\nAs a first setting use low values, increase gradually.\nRecommended range 10 to 30.',
+ CB_STARTUP_BOOST_ON_START:'Enables the BOOST function at power on\n(it can also be toggled from the display).\nBoost increases the assistance when starting and at low cadence,\nonly in Power assist mode.\nCaution: together with Assist without pedaling the effect increases,\nstressing the transmission.',
+ TF_BOOST_TORQUE_FACTOR:'Percentage of torque increase at cadence = 0;\nit decreases as the cadence increases.\nRecommended 250. Max value 500.',
+ TF_BOOST_CADENCE_STEP:'Sets how fast the boost torque factor decreases as the\ncadence increases, until extinction.\nMax value 50, recommended range 20 to 30\n(high values = shorter effect).',
+ RB_BOOST:'Startup boost mode.\ncadence: from standstill and when resuming pedaling in motion.\nspeed: only from standstill (recommended with coaster brake).\nauto: like cadence, with an intervention threshold\nwhen the bike is moving.',
+ CB_SMOOTH_START_ENABLED:'Used in Torque and Hybrid assist mode (disableable)\nUsed in Cadence assist mode (cannot be disabled)\nAttenuates the power at the start with high assistance levels',
+ TF_SMOOTH_START_RAMP:'0 = maximum ramp (slower start),\n100 = minimum ramp (faster start).\nIn Cadence mode the maximum value is 35.',
+ CB_STARTUP_ASSIST_ENABLED:'Helps starting on steep climbs: hold the Walk assist button\nwith the lights on; the pedals must be moved to start.\nHolding the button keeps the maximum power reached.\nSpeed limit: walk assist limit in STREET mode,\noffroad max speed otherwise.\nIf enabled, Walk assist works only with the lights off.\nNot available with coaster brake enabled.',
+ TF_BAT_CUR_MAX:'Maximum current the battery can deliver (see its characteristics).\nMax recommended 16 A for TSDZ2 36 V, 12 A for TSDZ2 48 V,\n23 A for TSDZ8; limited internally to 18 A.\nThe effective limit is the lower of this value and\nMotor power max / battery voltage.\nNear the maximum, consider installing a temperature sensor.',
+ TF_BATT_CAPACITY:'Total battery capacity in Watt hours: battery Volt x Ah.\nExample: 36 V x 17.5 Ah = 630 Wh.',
+ TF_BATT_NUM_CELLS:'Number of battery cells in series, 7 to 14.\n7 for 24 V battery, 10 for 36 V,\n13 for 48 V, 14 for 52 V.',
+ TF_BATT_VOLT_CUT_OFF:'Under load, below this voltage the controller lowers the\ncurrent to not drop under the battery minimum.\nIndicative value 29 for 36 V (2.9 V x 10 cells),\n38 for 48 V, 41 for 52 V.\nHigher values decrease autonomy but increase battery life.',
+ TF_BATT_PACK_RESISTANCE:'Default value 200 m\u03A9, valid for a 36 Volt, 500/600 Wh, 18650 cell battery.\nThe resistance value should be between 100 and 300 m\u03A9, considering that:\n- with higher voltages, the resistance increases.\n- with a greater number of parallels (higher capacity), the resistance decreases.\n- resistance increases as the battery ages (number of charges).\n- with 21700 cells, resistance is lower.\n- the type of cells can also have a significant impact.\nUsed in the SOC calculation; with a correct value the displayed\nvoltage stays almost unchanged under high current.',
+ TF_BATT_VOLT_CAL:'Corrects the voltage shown on the display.\nA fully charged 36 V battery should read close to 42 V:\nif lower, increase one unit at a time (decrease if higher).\nIndicative value 95 to 105.',
+ TF_BATT_CAPACITY_CAL:'Sets the actual battery capacity %.\nFrom full charge, use the bike until empty and read the remaining %:\nparameter = 100 - remaining.\nExample: 8% remaining = 92.',
+ JCB_DISPLAY_TYPE:'Type of stock display used.\nVLCD5, VLCD6, XH18 or 850C\n(6-pin connector, TSDZ2 protocol).',
+ RB_DISPLAY:'Working on: the display turns off\nafter 5 minutes of inactivity.\nAlways on: the display is always on.',
+ JCB_UNITS_TYPE:'Unit for speed and odometer;\nthe same setting must be made on the display.\nmph: values over 62.4 (99.9/1.6) change the display scale\n(e.g. 99.9% battery shows as 9.9).\nalternative mph (designed for VLCD6) avoids the scale change:\nset km/h on the display and alternative mph here.',
+ CB_ODO_COMPENSATION:'Recovers the distance the display adds even with the bike\nstationary (every data sent increments the odometer).\nWhile compensating, the displayed speed stays at zero until\nthe kilometers are balanced.',
+ CB_SET_PARAM_ON_START:'Enables changing the parameters at power on.\nIt can also be enabled/disabled from the display.\nSee the display operating manual for the procedure.',
+ CB_AUTO_DISPLAY_DATA:'Shows the configured data in sequence when the lights are on.\nIt can also be enabled/disabled from the display.\nType, number, order and display time of the data\nare set in Display advanced settings.',
+ CB_TOR_SENSOR_ADV:'Selects the calibration data used at power on\n(it can also be toggled from the display).\nWith Calibrated enabled: ON = the calibration parameters are used\n(offset/range/angle adjustments included);\nOFF = simplified alternative calibration\n(two assistance profiles when Estimated is enabled).\nWith Calibrated disabled: always runs without calibration.',
+ CB_TORQUE_CALIBRATION:'Enable only after entering the actual Pedal torque ADC offset\nand max values from the display calibration procedure.\nTorque sensor adv must also be enabled to use them.\nThe torque sensor ADC values can drift over time: check periodically.',
+ TF_TORQ_PER_ADC_STEP:'Conversion factor of the pedal torque,\nused only with Torque sensor adv disabled.\nSets the assist/human-power ratio in Power assist mode and\nthe human power shown on the display.\nDefault 67; enter the value from the weight calibration.',
+ CB_ADC_STEP_ESTIM:'Computes an estimated Pedal torque ADC step for a 24 kg weight.\nNeeds calibration enabled and Pedal torque ADC offset / max entered.\nLess accurate than the weight calibration but adequate.\nChanging the step value may require changing the assist level %\nin Power assist mode.',
+ TF_TORQ_PER_ADC_STEP_ADV:'Conversion factor of the pedal torque, used only with\nTorque sensor adv and Calibrated enabled.\nImportant for a correct human power value: do not use it to\nscale the assistance (use the range adjustment instead).\nDefault 34.',
+ TF_TORQ_ADC_OFFSET_ADJ:'Start sensitivity adjustment.\nNegative = more sensitivity at the start (advisable to disable\nAssist without pedaling and Startup boost);\npositive = less sensitivity.\nToo low can cause an unwanted start or a delayed motor stop.\nValue -20 to 14, default 0.',
+ TF_TORQ_ADC_RANGE_ADJ:'Range amplification, value -20 to 20, default 0.\nNegative = less amplification, positive = more.\nActive in all modes using the torque sensor.\nOnly with Torque sensor adv and Calibrated enabled.',
+ TF_TORQ_ADC_ANGLE_ADJ:'Initial angle of the torque sensor curve, value -20 to 20.\nNegative = more gradual response, less consumption;\npositive = more reactive, more consumption.\nWith positive values it is advisable to disable Startup boost.\nOnly with Torque sensor adv and Calibrated enabled.',
+ TF_TORQ_ADC_OFFSET:'ADC value of the torque sensor without any push on the pedals,\nfrom the calibration procedure on the display. Max 250.\nDo not use it to change the start sensitivity\n(use Pedal torque ADC offset adjustment).',
+ TF_TORQUE_ADC_MAX:'ADC value with the maximum thrust on the pedal (cyclist standing\non the horizontal pedal), from the calibration procedure.\nMax 500 for TSDZ2, 650 for TSDZ8.\nDo not use it to change the range amplification\n(use Pedal torque ADC range adjustment).',
  TF_WHEEL_CIRCUMF:'Indicative values:\n26-inch wheel = 2050 mm\n27-inch wheel = 2150 mm\n27.5 inch wheel = 2215 mm\n28-inch wheel = 2250 mm\n29-inch wheel = 2300 mm',
- TF_MAX_SPEED:'km/h or mph\nMax value in EU 25 km/h',
+ TF_MAX_SPEED:'Speed limit in offroad mode (km/h or mph).\nNear the limit the motor gradually reduces the power.\nMax value in EU 25 km/h.\nIgnored when Set max speed from display is enabled.',
+ CB_MAX_SPEED_DISPLAY:'Uses the speed limit set on the display;\nthe Max speed parameter is ignored.\nThe speed limit always remains active in STREET mode;\nwhen the display limit is lower, it has priority.',
+ JCB_ASSIST_MODE_ON_STARTUP:'Assist mode at power on: Power, Torque, Cadence, eMTB or Hybrid.\nCruise can only be selected on the display.\nHybrid combines Torque (excellent at low cadence) and\nPower (extension at high cadence), using the parameters\nof both modes at the same level.',
  CB_STARTUP_ASSIST_SPEED_LIMIT_ENABLED:'When enabled, Startup assist uses\nthe same speed limit as set for Walk assist.',
- TF_POWER_ASS_1:'% Human power\nMax value 500',
- TF_POWER_ASS_2:'% Human power\nMax value 500',
- TF_POWER_ASS_3:'% Human power\nMax value 500',
- TF_POWER_ASS_4:'% Human power\nMax value 500',
- TF_TORQUE_ASS_1:'Max value 254',
- TF_TORQUE_ASS_2:'Max value 254',
- TF_TORQUE_ASS_3:'Max value 254',
- TF_TORQUE_ASS_4:'Max value 254',
- TF_CADENCE_ASS_1:'Max value 254',
- TF_CADENCE_ASS_2:'Max value 254',
- TF_CADENCE_ASS_3:'Max value 254',
- TF_CADENCE_ASS_4:'Max value 254',
- TF_EMTB_ASS_1:'Value\nbetween 21 to 254',
- TF_EMTB_ASS_2:'Value\nbetween 21 to 254',
- TF_EMTB_ASS_3:'Value\nbetween 21 to 254',
- TF_EMTB_ASS_4:'Value\nbetween 21 to 254',
- TF_WALK_ASS_SPEED_1:'km/h x10 or mph x10\nValue 35 to 50 (3.5 to 5.0 km/h)',
- TF_WALK_ASS_SPEED_2:'km/h x10 or mph x10\nValue 35 to 50 (3.5 to 5.0 km/h)',
- TF_WALK_ASS_SPEED_3:'km/h x10 or mph x10\nValue 35 to 50 (3.5 to 5.0 km/h)',
- TF_WALK_ASS_SPEED_4:'km/h x10 or mph x10\nValue 35 to 50 (3.5 to 5.0 km/h)',
- TF_WALK_ASS_SPEED_LIMIT:'km/h x10 or mph x10\nMax value 60 (in EU 6 km/h)',
- TF_WALK_ASS_TIME:'Max value 255 (0.1 s)',
- CB_WALK_TIME_ENA:'Only with brake sensors enabled and offroad mode',
- CB_WALK_ASSIST_ENABLED:'Not available with coaster brake enabled',
- TF_CRUISE_ASS_1:'km/h or mph\nMax value in EU 25 km/h',
- TF_CRUISE_ASS_2:'km/h or mph\nMax value in EU 25 km/h',
- TF_CRUISE_ASS_3:'km/h or mph\nMax value in EU 25 km/h',
- TF_CRUISE_ASS_4:'km/h or mph\nMax value in EU 25 km/h',
- TF_CRUISE_SPEED_ENA:'Min speed to enable cruise (km/h or mph)',
- CB_CRUISE_WHITOUT_PEDALING:'Only with brake sensors enabled',
+ TF_POWER_ASS_1:'Percentage of human power, max 500.\nExample: 100 W on the pedals with 300 = 300 W from the motor.\nAlso used by Hybrid mode at high cadence.',
+ TF_POWER_ASS_2:'Percentage of human power, max 500.\nExample: 100 W on the pedals with 300 = 300 W from the motor.\nAlso used by Hybrid mode at high cadence.',
+ TF_POWER_ASS_3:'Percentage of human power, max 500.\nExample: 100 W on the pedals with 300 = 300 W from the motor.\nAlso used by Hybrid mode at high cadence.',
+ TF_POWER_ASS_4:'Percentage of human power, max 500.\nExample: 100 W on the pedals with 300 = 300 W from the motor.\nAlso used by Hybrid mode at high cadence.',
+ TF_TORQUE_ASS_1:'Relative value, max 254.\nMotor power proportional to the pedal torque\nmultiplied by this factor.\nAlso used by Hybrid mode at low cadence.',
+ TF_TORQUE_ASS_2:'Relative value, max 254.\nMotor power proportional to the pedal torque\nmultiplied by this factor.\nAlso used by Hybrid mode at low cadence.',
+ TF_TORQUE_ASS_3:'Relative value, max 254.\nMotor power proportional to the pedal torque\nmultiplied by this factor.\nAlso used by Hybrid mode at low cadence.',
+ TF_TORQUE_ASS_4:'Relative value, max 254.\nMotor power proportional to the pedal torque\nmultiplied by this factor.\nAlso used by Hybrid mode at low cadence.',
+ TF_CADENCE_ASS_1:'Value in W/2, max 254. Uses only the cadence sensor.\nPower = (value + cadence rpm) x 2 W:\ne.g. 50 gives 102 W at cadence 1, 220 W at cadence 60.\nStill limited by Motor power max and Battery current max.\nRecommended with brake sensors enabled.',
+ TF_CADENCE_ASS_2:'Value in W/2, max 254. Uses only the cadence sensor.\nPower = (value + cadence rpm) x 2 W:\ne.g. 50 gives 102 W at cadence 1, 220 W at cadence 60.\nStill limited by Motor power max and Battery current max.\nRecommended with brake sensors enabled.',
+ TF_CADENCE_ASS_3:'Value in W/2, max 254. Uses only the cadence sensor.\nPower = (value + cadence rpm) x 2 W:\ne.g. 50 gives 102 W at cadence 1, 220 W at cadence 60.\nStill limited by Motor power max and Battery current max.\nRecommended with brake sensors enabled.',
+ TF_CADENCE_ASS_4:'Value in W/2, max 254. Uses only the cadence sensor.\nPower = (value + cadence rpm) x 2 W:\ne.g. 50 gives 102 W at cadence 1, 220 W at cadence 60.\nStill limited by Motor power max and Battery current max.\nRecommended with brake sensors enabled.',
+ TF_EMTB_ASS_1:'Relative value, 21 to 254.\nHigher values = more reactive assistance,\nreaching the maximum motor power faster.',
+ TF_EMTB_ASS_2:'Relative value, 21 to 254.\nHigher values = more reactive assistance,\nreaching the maximum motor power faster.',
+ TF_EMTB_ASS_3:'Relative value, 21 to 254.\nHigher values = more reactive assistance,\nreaching the maximum motor power faster.',
+ TF_EMTB_ASS_4:'Relative value, 21 to 254.\nHigher values = more reactive assistance,\nreaching the maximum motor power faster.',
+ RB_EMTB:'Power: progressive assistance proportional to the power\non the pedals.\nTorque: progressive assistance proportional to the torque\non the pedals (same as previous versions).',
+ CB_WALK_ASSIST_ENABLED:'Assistance to accompany the bike on foot, up to 6 km/h,\nactivated with the walk assist button (see the display manual).\nMust also be enabled in the hidden display menu.\nNot available with coaster brake enabled.',
+ TF_WALK_ASS_SPEED_1:'Speed to reach and maintain, km/h x10 or mph x10.\nRecommended 25 to 45 (2.5 to 4.5 km/h),\nmaximum value 60 (6.0 km/h).\nA brief overshoot at the start is the auto calibration.',
+ TF_WALK_ASS_SPEED_2:'Speed to reach and maintain, km/h x10 or mph x10.\nRecommended 25 to 45 (2.5 to 4.5 km/h),\nmaximum value 60 (6.0 km/h).\nA brief overshoot at the start is the auto calibration.',
+ TF_WALK_ASS_SPEED_3:'Speed to reach and maintain, km/h x10 or mph x10.\nRecommended 25 to 45 (2.5 to 4.5 km/h),\nmaximum value 60 (6.0 km/h).\nA brief overshoot at the start is the auto calibration.',
+ TF_WALK_ASS_SPEED_4:'Speed to reach and maintain, km/h x10 or mph x10.\nRecommended 25 to 45 (2.5 to 4.5 km/h),\nmaximum value 60 (6.0 km/h).\nA brief overshoot at the start is the auto calibration.',
+ TF_WALK_ASS_SPEED_LIMIT:'Maximum speed allowed in walk assist mode,\nkm/h x10 or mph x10.\nMax value 60 (in EU 6 km/h).',
+ CB_WALK_TIME_ENA:'Only with brake sensors enabled and offroad mode.\nUseful on rough terrain, when a rebound can\nunwantedly release the button.',
+ TF_WALK_ASS_TIME:'Debounce time of the walk assist button, max 255 (0.1 s).\nSet it just above the walk assist activation time.\nCaution: assistance stays active for this time after\nreleasing the button; change the assist level to stop it.',
+ CB_CRUISE_ENABLED:'Enables Cruise mode, a speed control assist mode\nselectable only on the display.\nThe levels set the speed to maintain;\nthe motor power adjusts itself to keep it.',
+ TF_CRUISE_ASS_1:'Target speed to reach and maintain (km/h or mph);\nthe motor power adjusts itself to keep it.\nMax value in EU 25 km/h.',
+ TF_CRUISE_ASS_2:'Target speed to reach and maintain (km/h or mph);\nthe motor power adjusts itself to keep it.\nMax value in EU 25 km/h.',
+ TF_CRUISE_ASS_3:'Target speed to reach and maintain (km/h or mph);\nthe motor power adjusts itself to keep it.\nMax value in EU 25 km/h.',
+ TF_CRUISE_ASS_4:'Target speed to reach and maintain (km/h or mph);\nthe motor power adjusts itself to keep it.\nMax value in EU 25 km/h.',
+ CB_CRUISE_WHITOUT_PEDALING:'OFF: speed maintained only with minimal pedal movement\n(stopping pedaling stops the motor).\nON: speed held without pedaling by pressing the\nWalk assist button. Only with brake sensors enabled.\nNot available in STREET mode.',
+ TF_CRUISE_SPEED_ENA:'Minimum speed to activate cruise (km/h or mph);\nbelow it, Cadence assist is active.\nAt zero with Cruise without pedaling, the Walk assist button\nstarts the motor from a standstill (emergency mode,\noffroad only, comparable to a throttle).',
+ CB_LIGHTS:'Enables switching the lights on/off with the lights button.\nDisable it if the lights are not installed.',
  TF_LIGHT_MODE_ON_START:'With lights button ON\n0 - lights ON\n1 - lights FLASHING\n2 - lights ON and BRAKE-FLASHING when braking\n3 - lights FLASHING and ON when braking\n4 - lights FLASHING and BRAKE-FLASHING when braking\n5 - lights ON and ON when braking, even with the light button OFF\n6 - lights ON and BRAKE-FLASHING when braking, even with the light button OFF\n7 - lights FLASHING and ON when braking, even with the light button OFF\n8 - lights FLASHING and BRAKE-FLASHING when braking, even with the light button OFF',
  TF_LIGHT_MODE_1:'With lights button ON\n0 - lights ON\n1 - lights FLASHING\n2 - lights ON and BRAKE-FLASHING when braking\n3 - lights FLASHING and ON when braking\n4 - lights FLASHING and BRAKE-FLASHING when braking\n5 - lights ON and ON when braking, even with the light button OFF\n6 - lights ON and BRAKE-FLASHING when braking, even with the light button OFF\n7 - lights FLASHING and ON when braking, even with the light button OFF\n8 - lights FLASHING and BRAKE-FLASHING when braking, even with the light button OFF\nor alternative option settings\n11 - startup assist',
  TF_LIGHT_MODE_2:'With lights button ON\n0 - lights ON\n1 - lights FLASHING\n2 - lights ON and BRAKE-FLASHING when braking\n3 - lights FLASHING and ON when braking\n4 - lights FLASHING and BRAKE-FLASHING when braking\n5 - lights ON and ON when braking, even with the light button OFF\n6 - lights ON and BRAKE-FLASHING when braking, even with the light button OFF\n7 - lights FLASHING and ON when braking, even with the light button OFF\n8 - lights FLASHING and BRAKE-FLASHING when braking, even with the light button OFF\nor alternative option settings\n9 - assistance without pedal rotation',
  TF_LIGHT_MODE_3:'With lights button ON\n0 - lights ON\n1 - lights FLASHING\n2 - lights ON and BRAKE-FLASHING when braking\n3 - lights FLASHING and ON when braking\n4 - lights FLASHING and BRAKE-FLASHING when braking\n5 - lights ON and ON when braking, even with the light button OFF\n6 - lights ON and BRAKE-FLASHING when braking, even with the light button OFF\n7 - lights FLASHING and ON when braking, even with the light button OFF\n8 - lights FLASHING and BRAKE-FLASHING when braking, even with the light button OFF\nor alternative option settings\n10 - assistance with sensors error',
- TF_STREET_SPEED_LIM:'km/h or mph\nMax value in EU 25 km/h',
- TF_STREET_POWER_LIM:'Max nominal value in EU 250 W\nMax peak value approx. 500 W',
- JCB_THROTTLE_MODE_STREET:'Only with brake sensors enabled\nThrottle mode must be at the same or higher level',
+ CB_STREET_MODE_ON_START:'Enables STREET mode at power on\n(it can also be toggled from the display).\nSTREET mode is a road-legal configuration where\nspeed and motor power can be limited.',
+ TF_STREET_SPEED_LIM:'Speed limit when STREET mode is enabled (km/h or mph).\nNear the limit the motor gradually reduces the power.\nReplaced by the display limit when\nSet max speed from display is enabled.',
+ TF_STREET_POWER_LIM:'Maximum motor power in STREET mode.\nMax nominal value in EU 250 W, peak approx. 500 W.',
+ CB_STREET_POWER_LIM:'Enables the power limit in STREET mode.',
+ CB_STREET_CRUISE:'Enables Cruise in STREET mode (Cruise must also be enabled\nin the Cruise mode section).\nCruise without pedaling is always disabled in STREET mode.\nOnly with brake sensors enabled.',
+ CB_STREET_WALK:'Enables Walk assist in STREET mode.\nDisable it when Walk assist debounce is enabled.',
+ JCB_THROTTLE_MODE_STREET:'Throttle use in STREET mode, at the same or a lower level\nthan Throttle mode (Other function settings).\nOnly with brake sensors enabled.',
  JCB_ASSIST_LEVEL_5_MODE:'Assist level 5\nDISABLED, if not available\nBEFORE ECO, if the fifth level is before ECO\nAFTER TURBO, if the fifth level is after TURBO',
  TF_ASS_LEVELS_5_PERCENT:'Assist level 5\nIf assist level 5 mode is before ECO, must be less than 100%\npercentage of assistance level of ECO\nIf assist level 5 mode is after TURBO, must be greater than 100%\npercentage of assistance level of TURBO',
- TF_TORQUE_MODES_REF_VOLT:'% Human power\nMax value 500',
- TF_BAT_CELL_FULL:'Value 3.90 to 4.00',
- TF_BAT_CELL_OVER:'Value 4.25 to 4.35',
- TF_BAT_CELL_SOC:'Value 4.00 to 4.10',
- TF_BAT_CELL_3_4:'Value empty to full',
- TF_BAT_CELL_2_4:'Value empty to full',
- TF_BAT_CELL_1_4:'Value empty to full',
- TF_BAT_CELL_5_6:'Value empty to full',
- TF_BAT_CELL_4_6:'Value empty to full',
- TF_BAT_CELL_3_6:'Value empty to full',
- TF_BAT_CELL_2_6:'Value empty to full',
- TF_BAT_CELL_1_6:'Value empty to full',
- TF_BAT_CELL_EMPTY:'Indicative value 2.90\nIt depends on the\ncharacteristics of the cells',
- TF_DELAY_DATA_1:'Max value 255 (0.1 sec)\ncontinuous display at zero value',
+ JCB_TORQUE_BASED:'Assistance calculation for Torque, eMTB and Hybrid modes.\nCurrent: as previous OSF versions; the power output varies\nwith the battery voltage.\nPower: constant power based on the reference voltage;\ngives assist levels comparable with Power mode.\nRecommended for new users.',
+ TF_TORQUE_MODES_REF_VOLT:'Reference voltage used when Torque, eMTB, Hybrid\nis set to Power. Default 36 V.\nSet the battery nominal voltage to keep constant power\nwithout changing the level parameters.',
+ TF_BAT_CELL_FULL:'Minimum cell voltage shown as full charge\n(4 bars on VLCD6/XH18, 6 bars on VLCD5).\nValue 3.90 to 4.00.',
+ TF_BAT_CELL_OVER:'Cell voltage above which error E08 overvoltage is displayed\n(e.g. with a wrong number of cells in series).\nValue 4.25 to 4.35.',
+ TF_BAT_CELL_SOC:'Cell voltage above which the battery percentage is\nreset to 99.9% with a fully charged battery.\nValue 4.00 to 4.10.',
+ TF_BAT_CELL_3_4:'Cell voltage showing 3 of 4 bars.\nIntermediate charge states,\nfor VLCD6 and XH18 displays.',
+ TF_BAT_CELL_2_4:'Cell voltage showing 2 of 4 bars.\nIntermediate charge states,\nfor VLCD6 and XH18 displays.',
+ TF_BAT_CELL_1_4:'Cell voltage showing 1 of 4 bars.\nIntermediate charge states,\nfor VLCD6 and XH18 displays.',
+ TF_BAT_CELL_5_6:'Cell voltage showing 5 of 6 bars.\nIntermediate charge states, for VLCD5 displays.',
+ TF_BAT_CELL_4_6:'Cell voltage showing 4 of 6 bars.\nIntermediate charge states, for VLCD5 displays.',
+ TF_BAT_CELL_3_6:'Cell voltage showing 3 of 6 bars.\nIntermediate charge states, for VLCD5 displays.',
+ TF_BAT_CELL_2_6:'Cell voltage showing 2 of 6 bars.\nIntermediate charge states, for VLCD5 displays.',
+ TF_BAT_CELL_1_6:'Cell voltage showing 1 of 6 bars.\nIntermediate charge states, for VLCD5 displays.',
+ TF_BAT_CELL_EMPTY:'No-load cell voltage shown as empty battery (0 bars).\nThis is not the cut-off value.\nIndicative value 2.90.',
+ TF_DELAY_DATA_1:'Display time of the data, max 255 (0.1 s = 25.5 s);\nat zero the data is displayed continuously.\nUsed when Auto display data with lights on is enabled;\nchanging the level skips to the next data.',
  TF_DATA_1:'0 - motor temperature (\u00B0C)\n1 - battery SOC remaining (%)\n2 - battery voltage filtered (V)\n3 - battery current (A)\n4 - motor power (Watt/10)\n5 - adc throttle (8 bit)\n6 - adc torque sensor (10 bit)\n7 - pedal cadence (rpm)\n8 - human power(W/10)\n9 - pedal torque adc delta\n10 - consumed Wh/10\n11 - motor ERPS\n12 - duty cycle PWM %\n13 - battery voltage not filtered (V)',
  TF_DATA_2:'0 - motor temperature (\u00B0C)\n1 - battery SOC remaining (%)\n2 - battery voltage filtered (V)\n3 - battery current (A)\n4 - motor power (Watt/10)\n5 - adc throttle (8 bit)\n6 - adc torque sensor (10 bit)\n7 - pedal cadence (rpm)\n8 - human power(W/10)\n9 - pedal torque adc delta\n10 - consumed Wh/10\n11 - motor ERPS\n12 - duty cycle PWM %\n13 - battery voltage not filtered (V)',
  TF_DATA_3:'0 - motor temperature (\u00B0C)\n1 - battery SOC remaining (%)\n2 - battery voltage filtered (V)\n3 - battery current (A)\n4 - motor power (Watt/10)\n5 - adc throttle (8 bit)\n6 - adc torque sensor (10 bit)\n7 - pedal cadence (rpm)\n8 - human power(W/10)\n9 - pedal torque adc delta\n10 - consumed Wh/10\n11 - motor ERPS\n12 - duty cycle PWM %\n13 - battery voltage not filtered (V)',
  TF_DATA_4:'0 - motor temperature (\u00B0C)\n1 - battery SOC remaining (%)\n2 - battery voltage filtered (V)\n3 - battery current (A)\n4 - motor power (Watt/10)\n5 - adc throttle (8 bit)\n6 - adc torque sensor (10 bit)\n7 - pedal cadence (rpm)\n8 - human power(W/10)\n9 - pedal torque adc delta\n10 - consumed Wh/10\n11 - motor ERPS\n12 - duty cycle PWM %\n13 - battery voltage not filtered (V)',
  TF_DATA_5:'0 - motor temperature (\u00B0C)\n1 - battery SOC remaining (%)\n2 - battery voltage filtered (V)\n3 - battery current (A)\n4 - motor power (Watt/10)\n5 - adc throttle (8 bit)\n6 - adc torque sensor (10 bit)\n7 - pedal cadence (rpm)\n8 - human power(W/10)\n9 - pedal torque adc delta\n10 - consumed Wh/10\n11 - motor ERPS\n12 - duty cycle PWM %\n13 - battery voltage not filtered (V)',
  TF_DATA_6:'0 - motor temperature (\u00B0C)\n1 - battery SOC remaining (%)\n2 - battery voltage filtered (V)\n3 - battery current (A)\n4 - motor power (Watt/10)\n5 - adc throttle (8 bit)\n6 - adc torque sensor (10 bit)\n7 - pedal cadence (rpm)\n8 - human power(W/10)\n9 - pedal torque adc delta\n10 - consumed Wh/10\n11 - motor ERPS\n12 - duty cycle PWM %\n13 - battery voltage not filtered (V)',
- TF_DELAY_DATA_2:'Max value 255 (0.1 sec)\ncontinuous display at zero value',
- TF_DELAY_DATA_3:'Max value 255 (0.1 sec)\ncontinuous display at zero value',
- TF_DELAY_DATA_4:'Max value 255 (0.1 sec)\ncontinuous display at zero value',
- TF_DELAY_DATA_5:'Max value 255 (0.1 sec)\ncontinuous display at zero value',
- TF_DELAY_DATA_6:'Max value 255 (0.1 sec)\ncontinuous display at zero value',
- TF_ADC_THROTTLE_MIN:'Value 40 to 50',
- TF_ADC_THROTTLE_MAX:'Value 170 to 180',
- TF_TEMP_MIN_LIM:'Max value 75 (\u00B0C)',
- TF_TEMP_MAX_LIM:'Max value 85 (\u00B0C)',
- TF_DELAY_MENU:'Max value 60 (0.1 s)',
- TF_NUM_DATA_AUTO_DISPLAY:'Value 1 to 6',
- TF_COASTER_BRAKE_THRESHOLD:'Value 5 to 40 (s)\nRecommended 15\n(high values short effect)',
- JCB_THROTTLE_MODE:'Only with brake sensors enabled\nSet Optional ADC to Throttle',
+ TF_DELAY_DATA_2:'Display time of the data, max 255 (0.1 s = 25.5 s);\nat zero the data is displayed continuously.\nUsed when Auto display data with lights on is enabled;\nchanging the level skips to the next data.',
+ TF_DELAY_DATA_3:'Display time of the data, max 255 (0.1 s = 25.5 s);\nat zero the data is displayed continuously.\nUsed when Auto display data with lights on is enabled;\nchanging the level skips to the next data.',
+ TF_DELAY_DATA_4:'Display time of the data, max 255 (0.1 s = 25.5 s);\nat zero the data is displayed continuously.\nUsed when Auto display data with lights on is enabled;\nchanging the level skips to the next data.',
+ TF_DELAY_DATA_5:'Display time of the data, max 255 (0.1 s = 25.5 s);\nat zero the data is displayed continuously.\nUsed when Auto display data with lights on is enabled;\nchanging the level skips to the next data.',
+ TF_DELAY_DATA_6:'Display time of the data, max 255 (0.1 s = 25.5 s);\nat zero the data is displayed continuously.\nUsed when Auto display data with lights on is enabled;\nchanging the level skips to the next data.',
+ TF_ADC_THROTTLE_MIN:'ADC value of the throttle at rest, value 40 to 50.\nCheck the value of data 5 (adc throttle 8 bit) on the\ndisplay with the throttle released.',
+ TF_ADC_THROTTLE_MAX:'ADC value of the throttle fully pressed, value 170 to 180.\nCheck the value of data 5 (adc throttle 8 bit) on the\ndisplay with the throttle at maximum.',
+ JCB_TEMP_SENSOR_TYPE:'Type of the installed motor temperature sensor.',
+ CB_TEMP_ERR_MIN_LIM:'ON: the E06 overtemperature error is raised above the minimum\nlimit, with the power gradually reduced up to the maximum\nlimit where the motor stops.\nOFF: the error is raised only above the maximum limit.\nNeeds the temperature sensor installed and enabled.',
+ TF_TEMP_MIN_LIM:'Temperature where the motor protection starts\nlimiting the power, gradually decreased to the max limit.\nMax value 75\u00B0C.',
+ TF_TEMP_MAX_LIM:'Temperature at which the motor is turned off.\nMax value 85\u00B0C.',
+ TF_DELAY_MENU:'Max 60 (0.1 s). Time between the first press of the lights\nbutton (on) and the confirmation press (off) when setting\nparameters, and to step to the next parameter.\nAlso the display time of the data shown at power on.',
+ JCB_DATA_ON_STARTUP:'Data displayed at power on.\nNone = no data, Soc% = residual battery percentage,\nVolts = battery voltage.',
+ TF_NUM_DATA_AUTO_DISPLAY:'How many data are shown in sequence when the lights\nare turned on (with Auto display data with lights on enabled).\n1 = only Data 1; 2 = Data 1 and Data 2; ... 6 = all of them.\nThe data and their order are the Data 1-6 list configured\nin Display advanced settings, shown in that order;\neach data is shown for its own display time.',
+ JCB_SOC_CALC:'Method for the residual battery percentage.\nAuto: with used Wh, reset at power on when it differs more\nthan +/-15% from the voltage-based value.\nWh: with used Wh, reset only on full charge or manually.\nVolts: with the battery voltage, less accurate;\nuseful with two batteries of different capacities.',
+ JCB_BRAKE_FEATURE:'Brake sensors: enables the installed brake sensors and unlocks\nwalk assist debounce, cruise without pedaling and throttle.\nCoaster brake: for coaster brake motors; disables throttle,\nwalk assist and cruise without pedaling.\nTemperature switch: on/off thermostat (NO, max 85\u00B0C) instead\nof the brake sensors; E06 error when tripped.\nWith sensors installed, braking always stops the motor.',
+ TF_COASTER_BRAKE_THRESHOLD:'Sensitivity of the coaster brake when pushing the pedals\nbackwards (in torque sensor ADC steps below the offset).\nValue 5 to 40, recommended 15 (high values = shorter effect).\nIf Pedal torque ADC offset adjustment changes,\nthis may need to be changed too.',
+ JCB_OPTIONAL_ADC:'Function on the optional ADC input.\nThrottle: enable only if installed; needs brake sensors\nenabled; disabled at assist level 0-OFF.\nTemperature sensor: enable only if installed.\nThrottle and temperature sensor are alternatives:\nonly one can be installed.',
+ JCB_THROTTLE_MODE:'How the throttle works; brake sensors are recommended.\nPedaling: active only while pedaling.\n6 km/h only: active up to 6 km/h, even without pedaling.\n6 km/h & pedaling: up to 6 km/h without pedaling,\nabove only while pedaling.\nUnconditional: always active.\nDisabled at assist level 0-OFF.\nSet Optional ADC to Throttle.',
  TF_MOTOR_BLOCK_ERPS:'Value 10 to 30 (ERPS)',
  TF_MOTOR_BLOCK_CURR:'Value 1 to 5 (0.1 A)',
  TF_MOTOR_BLOCK_TIME:'Value 1 to 10 (0.1 s)',
@@ -454,8 +482,7 @@ const throttleOk = () => ADC() === THROTTLE && brakeOk();
 // ----- DOM ----------------------------------------------------------------
 const el = (id) => document.getElementById(id);
 
-// Java-app tooltip rendered as a small subscript line under the row; texts
-// longer than 3 lines are clamped to two lines with a more/less toggle.
+// Java-app tooltip rendered as a small subscript line under the row.
 function helpDiv(id, prefix) {
   const t = HELP[id];
   if (!t) return null;
@@ -464,15 +491,6 @@ function helpDiv(id, prefix) {
   const tx = document.createElement('span'); tx.className = 'txt';
   tx.textContent = (prefix ? prefix + ': ' : '') + t;
   d.append(tx);
-  if (t.split('\n').length > 3) {
-    d.classList.add('clamped');
-    const more = document.createElement('span'); more.className = 'more'; more.textContent = 'more';
-    more.addEventListener('click', () => {
-      const clamped = d.classList.toggle('clamped');
-      more.textContent = clamped ? 'more' : 'less';
-    });
-    d.append(more);
-  }
   return d;
 }
 
